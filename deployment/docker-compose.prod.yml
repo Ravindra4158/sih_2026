@@ -1,0 +1,11 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.backend
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.frontend
+    restart: unless-stopped

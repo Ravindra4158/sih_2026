@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.backend
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://screening:screening@database:5432/screening
+    depends_on: [database]
+  frontend:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.frontend
+    ports: ["5173:5173"]
+    depends_on: [backend]
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: screening
+      POSTGRES_USER: screening
+      POSTGRES_PASSWORD: screening
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+volumes:
+  postgres_data:

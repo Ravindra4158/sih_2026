@@ -1,0 +1,32 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+
+export async function healthCheck() {
+  const response = await fetch(`${API_BASE_URL}/health`);
+  return response.json();
+}
+
+/** Upload a document to the backend's validation boundary. */
+export async function uploadDocument(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body.detail ?? "Unable to upload document.");
+  }
+  return body;
+}
+
+/** Submit a document to the preprocessing and OCR pipeline. */
+export async function processDocument(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(`${API_BASE_URL}/documents/process`, { method: "POST", body: formData });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail ?? "Unable to process document.");
+  return body;
+}
