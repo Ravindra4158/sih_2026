@@ -30,14 +30,3 @@ export async function processDocument(file) {
   if (!response.ok) throw new Error(body.detail ?? "Unable to process document.");
   return body;
 }
-
-/** Submit a document (and optional selfie) to the complete verification pipeline. */
-export async function verifyDocument(file, selfie) {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (selfie) formData.append("selfie", selfie);
-  const response = await fetch(`${API_BASE_URL}/verification/documents/verify`, { method: "POST", body: formData });
-  const body = await response.json();
-  if (!response.ok) throw new Error(body.detail ?? "Unable to verify document.");
-  return body;
-}
