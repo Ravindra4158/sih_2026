@@ -12,7 +12,7 @@ export default function ScreeningResult() {
     let data = mockDatabase.getCaseById(id);
     if (!data) {
       // Fallback: Create mock case on the fly so the report loads instantly even on direct refresh
-      const isDemoTampered = id && (id.charCodeAt(id.length - 1) % 2 === 1); // odd IDs get tampered path for demo
+      const isDemoTampered = id && (id.charCodeAt(id.length - 1) % 2 === 1);
       data = {
         id: id || "BR-2026-00124",
         date: new Date().toLocaleString("en-IN", { hour12: true, dateStyle: "medium", timeStyle: "short" }),
@@ -107,16 +107,18 @@ export default function ScreeningResult() {
     );
   }
 
-  // Determine risk tone and label
-  const isHigh = caseData.riskLevel === "High";
-  const isMed = caseData.riskLevel === "Medium";
+  // Safe variables
+  const warnings = Array.isArray(caseData.warnings) ? caseData.warnings : [];
+  const riskLevel = caseData.riskLevel || "Low";
+  const isHigh = riskLevel === "High";
+  const isMed = riskLevel === "Medium";
   const riskColor = isHigh ? "#EF4444" : isMed ? "#F59E0B" : "#10B981";
-  const riskText = caseData.riskLevel.toUpperCase() + " RISK";
+  const riskText = riskLevel.toUpperCase() + " RISK";
+  const status = caseData.status || "Pending";
 
   // Recommended Action
   let recommendationTitle = "CLEAR FOR ENTRY";
   let recommendationDesc = "All automated validation checks passed successfully. No anomalies detected.";
-  let recommendationAction = null;
 
   if (isHigh) {
     recommendationTitle = "HIGH RISK ALERT - VERIFICATION FAILED";
@@ -126,14 +128,21 @@ export default function ScreeningResult() {
     recommendationDesc = "Borderline scores or minor warnings detected. Please verify credentials manually before making a clearance decision.";
   }
 
+  const hasExpiredWarning = warnings.some(w => typeof w === "string" && w.includes("EXPIRED"));
+  const hasMrzWarning = warnings.some(w => typeof w === "string" && w.includes("MRZ"));
+  const isPassport = caseData.docType?.toLowerCase()?.includes("passport");
+  const faceScore = caseData.biometrics?.faceMatchScore ?? 92.5;
+  const blinkPassed = caseData.biometrics?.livenessCheck?.blinkDetected ?? true;
+  const tamperDetected = caseData.forensics?.tamperDetected ?? false;
+
   // Findings list
   const findings = [
     { name: "Document Format Check", val: "Valid Format", status: true },
-    { name: "Expiry Date Check", val: caseData.warnings.some(w => w.includes("EXPIRED")) ? "Expired" : "Valid Range", status: !caseData.warnings.some(w => w.includes("EXPIRED")) },
-    { name: "MRZ Checksum Matching", val: caseData.warnings.some(w => w.includes("MRZ")) ? "Checksum Fail" : (caseData.docType === "Passport" ? "Validated" : "Skipped"), status: !caseData.warnings.some(w => w.includes("MRZ")) },
-    { name: "Tampering Forensic Check (ELA)", val: caseData.forensics.tamperDetected ? "Suspicious" : "Clean Layers", status: !caseData.forensics.tamperDetected },
-    { name: "Biometric Face Matching", val: `Match (${caseData.biometrics.faceMatchScore}%)`, status: caseData.biometrics.faceMatchScore >= 80 },
-    { name: "Liveness Check Verification", val: caseData.biometrics.livenessCheck.blinkDetected ? "Active User" : "No Blink Detected", status: caseData.biometrics.livenessCheck.blinkDetected }
+    { name: "Expiry Date Check", val: hasExpiredWarning ? "Expired" : "Valid Range", status: !hasExpiredWarning },
+    { name: "MRZ Checksum Matching", val: hasMrzWarning ? "Checksum Fail" : (isPassport ? "Validated" : "Skipped (National ID)"), status: !hasMrzWarning },
+    { name: "Tampering Forensic Check (ELA)", val: tamperDetected ? "Suspicious" : "Clean Layers", status: !tamperDetected },
+    { name: "Biometric Face Matching", val: `Match (${faceScore}%)`, status: faceScore >= 80 },
+    { name: "Liveness Check Verification", val: blinkPassed ? "Active User" : "No Blink Detected", status: blinkPassed }
   ];
 
   return (
@@ -142,7 +151,7 @@ export default function ScreeningResult() {
       <div className="page-heading dashboard-heading" style={{ marginBottom: '16px' }}>
         <div>
           <span className="eyebrow" style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.1em' }}>SCREENING REPORT</span>
-          <h2 style={{ margin: '8px 0 4px' }}>Case Result: {caseData.name}</h2>
+          <h2 style={{ margin: '8px 0 4px' }}>Case Result: {caseData.name || "Anonymous Candidate"}</h2>
           <p>ID: {caseData.id} · Screened on: {caseData.date}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -156,17 +165,17 @@ export default function ScreeningResult() {
       </div>
 
       {/* Tabs Sub-navigation */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px', gap: '8px' }}>
-        <Link to={`/screening/${id}/results`} style={{ padding: '12px 20px', fontWeight: '600', color: 'var(--primary)', borderBottom: '2px solid var(--primary)', fontSize: '13px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px', gap: '8px', overflowX: 'auto' }}>
+        <Link to={`/screening/${id}/results`} style={{ padding: '12px 20px', fontWeight: '600', color: 'var(--primary)', borderBottom: '2px solid var(--primary)', fontSize: '13px', whiteSpace: 'nowrap' }}>
           Overview Results
         </Link>
-        <Link to={`/screening/${id}/biometrics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Link to={`/screening/${id}/biometrics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
           <Fingerprint size={16} /> Biometrics Details
         </Link>
-        <Link to={`/screening/${id}/forensics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Link to={`/screening/${id}/forensics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
           <Eye size={16} /> Forensics &amp; ELA
         </Link>
-        <Link to={`/screening/${id}/data`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Link to={`/screening/${id}/data`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
           <Database size={16} /> OCR &amp; Raw Fields
         </Link>
       </div>
@@ -215,8 +224,8 @@ export default function ScreeningResult() {
               
               <div style={{ display: 'flex', gap: '10px' }}>
                 <span style={{ fontSize: '12px', fontWeight: '600' }}>Status: </span>
-                <span className={`recent-status status-${caseData.status === 'Approved' ? 'green' : caseData.status === 'Rejected' ? 'red' : 'amber'}`}>
-                  {caseData.status.toUpperCase()}
+                <span className={`recent-status status-${status === 'Approved' ? 'green' : status === 'Rejected' ? 'red' : 'amber'}`}>
+                  {status.toUpperCase()}
                 </span>
               </div>
             </div>
@@ -252,12 +261,12 @@ export default function ScreeningResult() {
           <Panel title="DOCUMENT INFORMATION SUMMARY">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
               {[
-                ["Document Holder", caseData.name],
-                ["Document Type", caseData.docType],
-                ["Identifier Number", caseData.docNo],
-                ["Date of Birth", caseData.details.dob],
-                ["Expiry Date", caseData.details.expiryDate],
-                ["Nationality", caseData.details.nationality]
+                ["Document Holder", caseData.name || "N/A"],
+                ["Document Type", caseData.docType || "N/A"],
+                ["Identifier Number", caseData.docNo || "N/A"],
+                ["Date of Birth", caseData.details?.dob || "N/A"],
+                ["Expiry Date", caseData.details?.expiryDate || "N/A"],
+                ["Nationality", caseData.details?.nationality || "Indian"]
               ].map((item, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>{item[0]}</span>
@@ -268,14 +277,14 @@ export default function ScreeningResult() {
           </Panel>
 
           {/* Warnings Log if any */}
-          {caseData.warnings.length > 0 && (
+          {warnings.length > 0 && (
             <section className="panel" style={{ border: '1px solid #FEE2E2', background: '#FEF2F2', padding: '20px' }}>
               <div className="panel-title" style={{ color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #FCA5A5', paddingBottom: '8px', marginBottom: '12px' }}>
                 <AlertCircle size={18} color="#B91C1C" />
                 <span>Validation Alerts &amp; Flag Details</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {caseData.warnings.map((w, idx) => (
+                {warnings.map((w, idx) => (
                   <div key={idx} style={{ fontSize: '12.5px', color: '#991B1B', lineHeight: '1.4', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '14px', fontWeight: 'bold' }}>•</span>
                     <span>{w}</span>

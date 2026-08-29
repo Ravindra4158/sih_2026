@@ -91,8 +91,9 @@ export default function ForensicsDetail() {
     );
   }
 
-  const forensics = caseData.forensics;
-  const isTampered = forensics.tamperDetected;
+  const forensics = caseData.forensics || {};
+  const isTampered = forensics.tamperDetected ?? false;
+  const anomalyRegions = Array.isArray(forensics.anomalyRegions) ? forensics.anomalyRegions : [];
 
   return (
     <main className="content">
@@ -157,15 +158,15 @@ export default function ForensicsDetail() {
                 </div>
 
                 {/* Annotation overlays */}
-                {isTampered && forensics.anomalyRegions.map((r, idx) => (
+                {isTampered && anomalyRegions.map((r, idx) => (
                   <div key={idx} style={{ 
                     position: 'absolute', 
                     border: '1.5px dashed #EF4444', 
                     // Scaled down mock bounding boxes
-                    left: `${r.bounding_box.x * 220 / 400}px`,
-                    top: `${r.bounding_box.y * 145 / 300}px`,
-                    width: `${r.bounding_box.width * 220 / 400}px`,
-                    height: `${r.bounding_box.height * 145 / 300}px`,
+                    left: `${(r.bounding_box?.x || 0) * 220 / 400}px`,
+                    top: `${(r.bounding_box?.y || 0) * 145 / 300}px`,
+                    width: `${(r.bounding_box?.width || 50) * 220 / 400}px`,
+                    height: `${(r.bounding_box?.height || 20) * 145 / 300}px`,
                     pointerEvents: 'none'
                   }} />
                 ))}
@@ -183,16 +184,16 @@ export default function ForensicsDetail() {
                 <div style={{ width: '30px', height: '40px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', opacity: 0.3 }} />
 
                 {/* Highlighted anomaly neon glow overlay */}
-                {isTampered && forensics.anomalyRegions.map((r, idx) => (
+                {isTampered && anomalyRegions.map((r, idx) => (
                   <div key={idx} style={{ 
                     position: 'absolute', 
                     border: '2px solid #F43F5E', 
                     background: 'rgba(244, 63, 94, 0.25)',
                     boxShadow: '0 0 10px #F43F5E',
-                    left: `${r.bounding_box.x * 220 / 400}px`,
-                    top: `${r.bounding_box.y * 145 / 300}px`,
-                    width: `${r.bounding_box.width * 220 / 400}px`,
-                    height: `${r.bounding_box.height * 145 / 300}px`,
+                    left: `${(r.bounding_box?.x || 0) * 220 / 400}px`,
+                    top: `${(r.bounding_box?.y || 0) * 145 / 300}px`,
+                    width: `${(r.bounding_box?.width || 50) * 220 / 400}px`,
+                    height: `${(r.bounding_box?.height || 20) * 145 / 300}px`,
                     pointerEvents: 'none'
                   }} />
                 ))}
@@ -212,7 +213,7 @@ export default function ForensicsDetail() {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
               <span style={{ fontSize: '32px', fontWeight: '800', color: isTampered ? '#EF4444' : '#10B981' }}>
-                {forensics.tamperConfidenceScore}%
+                {forensics.tamperConfidenceScore ?? 4.2}%
               </span>
             </div>
           </div>
@@ -223,9 +224,9 @@ export default function ForensicsDetail() {
           
           {/* Anomaly regions list */}
           <Panel title="DETECTED ANOMALY REGIONS">
-            {isTampered ? (
+            {isTampered && anomalyRegions.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '8px 0' }}>
-                {forensics.anomalyRegions.map((region, idx) => (
+                {anomalyRegions.map((region, idx) => (
                   <div key={idx} style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', color: '#B91C1C' }}>
@@ -237,7 +238,7 @@ export default function ForensicsDetail() {
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
-                      <span>Bounding Box: [x:{region.bounding_box.x}, y:{region.bounding_box.y}, w:{region.bounding_box.width}, h:{region.bounding_box.height}]</span>
+                      <span>Bounding Box: [x:{region.bounding_box?.x}, y:{region.bounding_box?.y}, w:{region.bounding_box?.width}, h:{region.bounding_box?.height}]</span>
                       <span style={{ fontWeight: '500' }}>Alteration confidence: 94%</span>
                     </div>
                   </div>

@@ -24,7 +24,7 @@ export default function ScreeningPipeline() {
 
   useEffect(() => {
     // Load case data
-    const data = mockDatabase.getCaseById(id);
+    let data = mockDatabase.getCaseById(id);
     if (!data) {
       // Create a temporary case if it doesn't exist
       const tempCase = {
@@ -54,40 +54,47 @@ export default function ScreeningPipeline() {
   useEffect(() => {
     if (!caseData) return;
 
+    const warnings = Array.isArray(caseData.warnings) ? caseData.warnings : [];
+    const iqa = caseData.iqa || {};
+    const details = caseData.details || {};
+    const forensics = caseData.forensics || {};
+    const biometrics = caseData.biometrics || {};
+    const liveness = biometrics.livenessCheck || {};
+
     const logMessages = [
       `[SYS] Initializing border screening pipeline for Case ID: ${id}...`,
-      `[SYS] Document type declared: ${caseData.docType}`,
+      `[SYS] Document type declared: ${caseData.docType || "National ID"}`,
       `[IQA] Stage 1 starting: Running Image Quality Analysis...`,
-      `[IQA] Resolution check: Passed. Blur score: ${caseData.iqa.blurScore} (threshold: 0.15).`,
-      `[IQA] Glare detection: ${caseData.iqa.glareDetected ? "WARNING - Optical reflection detected" : "Passed - No major glare found"}.`,
+      `[IQA] Resolution check: Passed. Blur score: ${iqa.blurScore ?? 0.05} (threshold: 0.15).`,
+      `[IQA] Glare detection: ${iqa.glareDetected ? "WARNING - Optical reflection detected" : "Passed - No major glare found"}.`,
       `[SYS] Stage 2 starting: Document Type Classification...`,
-      `[SYS] Rule-based classifier match: ${caseData.docType} detected. Layout boundaries resolved.`,
-      `[OCR] Stage 3 starting: Performing OCR character extraction...`,
-      `[OCR] Extracted raw document fields. Average character confidence: 95.8%.`,
+      `[SYS] Rule-based classifier match: ${caseData.docType || "Document"} detected. Layout boundaries resolved.`,
+      `[OCR] Stage 3 starting: Performing EasyOCR character extraction...`,
+      `[OCR] Extracted document identity: ${caseData.name || "Candidate"} | Doc: ${caseData.docNo || "N/A"} | DOB: ${details.dob || "N/A"}.`,
       `[SYS] Stage 4 starting: Checking MRZ / Checksum validity...`,
-      caseData.docType === "Passport" 
-        ? `[MRZ] MRZ validation: ${caseData.warnings.some(w => w.includes("MRZ")) ? "FAILED check digit comparison" : "PASSED check digit validation."}`
-        : `[MRZ] MRZ validation: Skipping (non-passport layout).`,
+      (caseData.docType || "").toLowerCase().includes("passport")
+        ? `[MRZ] MRZ validation: ${warnings.some(w => typeof w === "string" && w.includes("MRZ")) ? "FAILED check digit comparison" : "PASSED check digit validation."}`
+        : `[MRZ] MRZ validation: Skipping (non-passport/national ID layout).`,
       `[SYS] Stage 5 starting: VIZ Format & Expiry Rules check...`,
-      caseData.warnings.some(w => w.includes("DOCUMENT_EXPIRED")) 
-        ? `[VIZ] Rule alert: Document expiry date (${caseData.details.expiryDate}) is in the PAST.` 
-        : `[VIZ] Validation: Expiry date valid (${caseData.details.expiryDate}). Name format verified.`,
+      warnings.some(w => typeof w === "string" && w.includes("EXPIRED")) 
+        ? `[VIZ] Rule alert: Document expiry date (${details.expiryDate || "N/A"}) is in the PAST.` 
+        : `[VIZ] Validation: Expiry date valid (${details.expiryDate || "N/A"}). Name format verified.`,
       `[SYS] Stage 6 starting: Running Error Level Analysis (ELA) forensics...`,
-      caseData.forensics.tamperDetected 
+      forensics.tamperDetected 
         ? `[ELA] ALERT: Tampering detected! High pixel compression variance found in photo/date bounds.`
-        : `[ELA] Forensic review complete. Uniform compression layers. Tampering probability: ${caseData.forensics.tamperConfidenceScore}%.`,
+        : `[ELA] Forensic review complete. Uniform compression layers. Tampering probability: ${forensics.tamperConfidenceScore ?? 4.2}%.`,
       `[SYS] Stage 7 starting: Biometric Face Match & Liveness...`,
-      `[BIO] Comparing live portrait with extracted ID photo. Sim: ${caseData.biometrics.faceMatchScore}%.`,
-      caseData.biometrics.livenessCheck.blinkDetected 
-        ? `[BIO] Liveness blink detection passed. Liveness score: ${caseData.biometrics.livenessCheck.padScore}.`
+      `[BIO] Comparing live portrait with extracted ID photo. Sim: ${biometrics.faceMatchScore ?? 92}%.`,
+      liveness.blinkDetected ?? true
+        ? `[BIO] Liveness blink detection passed. Liveness score: ${liveness.padScore ?? 0.94}.`
         : `[BIO] Liveness check warning: Blink not detected in stream.`,
       `[SYS] Stage 8 starting: Computing aggregate Risk Score...`,
-      `[SYS] Decision Engine resolved: Risk Level is ${caseData.riskLevel.toUpperCase()}. Routing to Officer ${caseData.officer}.`,
+      `[SYS] Decision Engine resolved: Risk Level is ${(caseData.riskLevel || "LOW").toUpperCase()}. Routing to Officer ${caseData.officer || "Reviewer"}.`,
       `[SYS] Screening completed! Redirecting to results...`
     ];
 
     let currentLogIndex = 0;
-    const intervalTime = 700; // time between step/log increments
+    const intervalTime = 600;
 
     const timer = setInterval(() => {
       if (currentLogIndex < logMessages.length) {
@@ -107,7 +114,7 @@ export default function ScreeningPipeline() {
         clearInterval(timer);
         setTimeout(() => {
           navigate(`/screening/${id}/results`);
-        }, 1200);
+        }, 1000);
       }
     }, intervalTime);
 
@@ -205,11 +212,11 @@ export default function ScreeningPipeline() {
 
           <div style={{ padding: '20px', overflowY: 'auto', flex: 1, fontFamily: 'monospace', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '8px', scrollbarWidth: 'thin' }}>
             {logs.map((log, index) => {
-              let color = '#38BDF8'; // default blue
-              if (log.includes('[SYS]')) color = '#94A3B8'; // gray
-              if (log.includes('[IQA]')) color = '#F472B6'; // pink
-              if (log.includes('[OCR]')) color = '#34D399'; // green
-              if (log.includes('ALERT') || log.includes('WARNING') || log.includes('FAILED')) color = '#F87171'; // red
+              let color = '#38BDF8';
+              if (log.includes('[SYS]')) color = '#94A3B8';
+              if (log.includes('[IQA]')) color = '#F472B6';
+              if (log.includes('[OCR]')) color = '#34D399';
+              if (log.includes('ALERT') || log.includes('WARNING') || log.includes('FAILED')) color = '#F87171';
 
               return (
                 <div key={index} style={{ color, whiteSpace: 'pre-wrap', lineHeight: '1.6', wordBreak: 'break-all' }}>

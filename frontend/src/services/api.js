@@ -5,6 +5,27 @@ export async function healthCheck() {
   return response.json();
 }
 
+/**
+ * Submit a document image to the backend EasyOCR service.
+ * @param {File|Blob} file - The image file to process
+ * @param {string} documentHint - "AUTO" | "AADHAAR" | "PAN" | "PASSPORT"
+ */
+export async function processOcrDocument(file, documentHint = "AUTO") {
+  const formData = new FormData();
+  formData.append("image_file", file, file.name || "document.jpg");
+
+  const response = await fetch(`${API_BASE_URL}/document/process-ocr?document_hint=${encodeURIComponent(documentHint)}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body.detail ?? "Unable to process document OCR.");
+  }
+  return body;
+}
+
 /** Upload a document to the backend's validation boundary. */
 export async function uploadDocument(file) {
   const formData = new FormData();

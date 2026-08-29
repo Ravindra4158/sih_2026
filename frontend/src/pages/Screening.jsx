@@ -4,9 +4,10 @@ import { Header, Panel } from "./DashboardLayout";
 import {
   Bell, Upload, FileText, Camera, ArrowRight, ScanFace,
   Check, Eye, HelpCircle, User, CreditCard, Shield, Sparkles,
-  RotateCcw, Sliders, ChevronRight, ChevronLeft, ShieldCheck, Play
+  RotateCcw, Sliders, ChevronRight, ChevronLeft, ShieldCheck, Play, Loader2
 } from "lucide-react";
 import { mockDatabase } from "../utils/mockDatabase";
+import { processOcrDocument } from "../services/api";
 
 export default function Screening() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Screening() {
   const [docType, setDocType] = useState("Passport");
   const [candidateName, setCandidateName] = useState("");
   const [simulateTampered, setSimulateTampered] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Files & Previews
   const [docFile, setDocFile] = useState(null);
@@ -67,13 +69,18 @@ export default function Screening() {
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg");
 
-      if (cameraTarget === "document") {
-        setDocPreview(dataUrl);
-        setDocFile(true);
-      } else {
-        setSelfiePreview(dataUrl);
-        setSelfieFile(true);
-      }
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const capturedFile = new File([blob], `${cameraTarget}_capture.jpg`, { type: "image/jpeg" });
+          if (cameraTarget === "document") {
+            setDocPreview(dataUrl);
+            setDocFile(capturedFile);
+          } else {
+            setSelfiePreview(dataUrl);
+            setSelfieFile(capturedFile);
+          }
+        }
+      }, "image/jpeg", 0.95);
     } else {
       if (cameraTarget === "document") {
         setDocPreview("SIMULATED_DOC_IMAGE");
@@ -105,7 +112,7 @@ export default function Screening() {
     }
   }, [docPreview, simulateTampered]);
 
-  const handleStartScreening = (e) => {
+  const handleStartScreening = async (e) => {
     e.preventDefault();
 
     if (!docFile) {
@@ -113,42 +120,65 @@ export default function Screening() {
       return;
     }
 
+    setIsSubmitting(true);
     const uniqueId = `BR-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const finalName = candidateName.trim() || "Anjali Gupta";
+
+    let hint = "AUTO";
+    if (docType.includes("Aadhaar")) hint = "AADHAAR";
+    else if (docType.includes("PAN")) hint = "PAN";
+    else if (docType.includes("Passport")) hint = "PASSPORT";
+
+    let ocrResponse = null;
+    try {
+      if (docFile instanceof Blob || docFile instanceof File) {
+        ocrResponse = await processOcrDocument(docFile, hint);
+      }
+    } catch (err) {
+      console.warn("Backend live OCR call notice (using fallback values if necessary):", err);
+    }
+
+    const parsed = ocrResponse?.parsed_fields || {};
+    const detectedDocType = ocrResponse?.document_type || docType;
+    const finalName = parsed.name || candidateName.trim() || "Anjali Gupta";
+    const finalDocNo = parsed.aadhaar_number || parsed.pan_number || parsed.document_number || (docType === "Passport" ? "P5539201" : "9982 1042 8847");
+    const finalDob = parsed.date_of_birth || "12/06/1994";
+    const finalGender = parsed.sex === "F" ? "Female" : parsed.sex === "M" ? "Male" : "Other";
+    const finalNationality = parsed.nationality || "Indian";
 
     const newCase = {
       id: uniqueId,
       date: new Date().toLocaleString("en-IN", { hour12: true, dateStyle: "medium", timeStyle: "short" }),
       name: finalName,
-      docType: docType,
-      docNo: docType === "Passport" ? "P5539201" : docType === "Aadhaar Card" ? "9982 1042 8847" : docType === "PAN Card" ? "ABCPD5531L" : "DL-0420210085",
+      docType: detectedDocType,
+      docNo: finalDocNo,
       riskLevel: simulateTampered ? "High" : "Low",
       status: "Pending",
       officer: "Rajesh K.",
       reviewNotes: "",
       details: {
-        dob: "12/06/1994",
-        nationality: "Indian",
-        gender: "Female",
-        issueDate: "14/08/2021",
-        expiryDate: docType === "Passport" ? (simulateTampered ? "13/08/2026" : "13/08/2031") : "N/A"
+        dob: finalDob,
+        nationality: finalNationality,
+        gender: finalGender,
+        issueDate: parsed.issue_date || "14/08/2021",
+        expiryDate: parsed.expiry_date || (docType === "Passport" ? (simulateTampered ? "13/08/2026" : "13/08/2031") : "N/A")
       },
       iqa: {
-        blurScore: 0.05,
-        glareDetected: simulateTampered,
-        passQualityCheck: true
+        blurScore: ocrResponse?.iqa_metrics?.blur_score ?? 0.05,
+        glareDetected: ocrResponse?.iqa_metrics?.glare_detected ?? simulateTampered,
+        passQualityCheck: ocrResponse?.iqa_metrics?.pass_quality_check ?? true
       },
       ocr: {
-        rawText: docType === "Passport"
-          ? `REPUBLIC OF INDIA\nPASSPORT\nType: P  Country Code: IND  Passport No: P5539201\nSurname: GUPTA\nGiven Names: ANJALI\nNationality: INDIAN\nDate of birth: 12 JUN 1994\nDate of issue: 14 AUG 2021  Date of expiry: ${simulateTampered ? "13 AUG 2026" : "13 AUG 2031"}\nP<INDGUPTA<<ANJALI<<<<<<<<<<<<<<<<<<<<<<<<<<\nP5539201<6IND9406124F${simulateTampered ? "2608138" : "3108138"}<<<<<<<<<<<<<<<02`
-          : `GOVERNMENT OF INDIA\nAnjali Gupta\nDOB: 12/06/1994\nFEMALE\n9982 1042 8847`,
+        rawText: ocrResponse?.raw_text || (docType === "Passport"
+          ? `REPUBLIC OF INDIA\nPASSPORT\nType: P  Country Code: IND  Passport No: ${finalDocNo}\nSurname: GUPTA\nGiven Names: ${finalName}\nNationality: INDIAN\nDate of birth: ${finalDob}`
+          : `GOVERNMENT OF INDIA\n${finalName}\nDOB: ${finalDob}\n${finalDocNo}`),
         parsedFields: {
-          "Document Type": docType,
-          "Document Number": docType === "Passport" ? "P5539201" : "9982 1042 8847",
+          "Document Type": detectedDocType,
+          "Document Number": finalDocNo,
           "Full Name": finalName,
-          "Date of Birth": "12/06/1994"
+          "Date of Birth": finalDob,
+          ...(parsed.father_name ? { "Father's Name": parsed.father_name } : {})
         },
-        confidenceScores: {
+        confidenceScores: ocrResponse?.confidence_scores || {
           "Document Number": 99.1,
           "Full Name": 98.6,
           "Date of Birth": 97.4
@@ -185,6 +215,7 @@ export default function Screening() {
     };
 
     mockDatabase.saveCase(newCase);
+    setIsSubmitting(false);
     navigate(`/screening/${uniqueId}`);
   };
 
@@ -503,10 +534,31 @@ export default function Screening() {
                 <button
                   type="button"
                   onClick={handleStartScreening}
+                  disabled={isSubmitting}
                   className="btn-primary"
-                  style={{ padding: '12px 24px', fontSize: '13px', display: 'flex', gap: '8px', borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%)', boxShadow: '0 8px 16px rgba(37,99,235,0.2)' }}
+                  style={{
+                    padding: '12px 24px',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    borderRadius: '8px',
+                    background: isSubmitting ? '#94A3B8' : 'linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%)',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 8px 16px rgba(37,99,235,0.2)'
+                  }}
                 >
-                  Initiate Secure Run <Play size={14} fill="white" />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Extracting with EasyOCR...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Initiate Secure Run</span>
+                      <Play size={14} fill="white" />
+                    </>
+                  )}
                 </button>
               </div>
 

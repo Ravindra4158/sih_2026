@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Fingerprint, Eye, Database, FileText, CheckCircle, BarChart2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Fingerprint, Eye, Database, FileText, ShieldCheck } from "lucide-react";
 import { Panel } from "./DashboardLayout";
 import { mockDatabase } from "../utils/mockDatabase";
 
@@ -52,14 +52,8 @@ export default function DocumentDataDetail() {
         forensics: {
           tamperDetected: isDemoTampered,
           tamperConfidenceScore: isDemoTampered ? 87.5 : 4.2,
-          anomalyRegions: isDemoTampered ? [
-            {
-              region_label: "Digital Alteration (Expiry Date Zone)",
-              bounding_box: { x: 260, y: 180, width: 130, height: 28 },
-              error_variance: 58.4
-            }
-          ] : [],
-          elaHeatmapBase64: isDemoTampered ? "MOCK_ELA" : null
+          anomalyRegions: [],
+          elaHeatmapBase64: null
         },
         biometrics: {
           faceMatchScore: isDemoTampered ? 48.2 : 93.8,
@@ -72,11 +66,7 @@ export default function DocumentDataDetail() {
           },
           earFrameSeries: [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]
         },
-        warnings: isDemoTampered ? [
-          "DOCUMENT_EXPIRED: Expiry date 14/01/2026 is in the past.",
-          "ELA_TAMPERING_DETECTED: High digital re-compression variance in expiry date region.",
-          "BIOMETRIC_MISMATCH: Face comparison similarity is 48.2% (fails identity threshold)."
-        ] : []
+        warnings: []
       };
       mockDatabase.saveCase(data);
     }
@@ -91,8 +81,10 @@ export default function DocumentDataDetail() {
     );
   }
 
-  const ocr = caseData.ocr;
-  const parsedKeys = Object.keys(ocr.parsedFields);
+  const ocr = caseData.ocr || {};
+  const parsedFields = ocr.parsedFields || {};
+  const parsedKeys = Object.keys(parsedFields);
+  const confidenceScores = ocr.confidenceScores || {};
 
   return (
     <main className="content">
@@ -114,17 +106,17 @@ export default function DocumentDataDetail() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px', gap: '8px' }}>
-        <Link to={`/screening/${id}/results`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px', gap: '8px', overflowX: 'auto' }}>
+        <Link to={`/screening/${id}/results`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', whiteSpace: 'nowrap' }}>
           Overview Results
         </Link>
-        <Link to={`/screening/${id}/biometrics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Link to={`/screening/${id}/biometrics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
           <Fingerprint size={16} /> Biometrics Details
         </Link>
-        <Link to={`/screening/${id}/forensics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Link to={`/screening/${id}/forensics`} style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-muted)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
           <Eye size={16} /> Forensics &amp; ELA
         </Link>
-        <Link to={`/screening/${id}/data`} style={{ padding: '12px 20px', fontWeight: '600', color: 'var(--primary)', borderBottom: '2px solid var(--primary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Link to={`/screening/${id}/data`} style={{ padding: '12px 20px', fontWeight: '600', color: 'var(--primary)', borderBottom: '2px solid var(--primary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
           <Database size={16} /> OCR &amp; Raw Fields
         </Link>
       </div>
@@ -139,45 +131,44 @@ export default function DocumentDataDetail() {
             <span>Raw OCR Buffer Output</span>
           </div>
           <div style={{ padding: '20px', overflowY: 'auto', flex: 1, background: '#0F172A', color: '#F1F5F9', fontFamily: 'monospace', fontSize: '12px', whiteSpace: 'pre-wrap', lineHeight: '1.7', wordBreak: 'break-all' }}>
-            {ocr.rawText}
+            {ocr.rawText || "No raw text recorded."}
           </div>
         </section>
 
         {/* Right: Parsed key-values with confidence meters */}
         <Panel title="PARSED IDENTIFIER FIELDS">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
-            {parsedKeys.map((key, idx) => {
-              // Find matching confidence rating, or default
-              let conf = 95.0;
-              if (ocr.confidenceScores[key]) {
-                conf = ocr.confidenceScores[key];
-              } else if (key.includes("Type") || key.includes("Nationality")) {
-                conf = 98.5;
-              } else {
-                conf = 94.0;
-              }
+            {parsedKeys.length > 0 ? (
+              parsedKeys.map((key, idx) => {
+                let rawConf = confidenceScores[key] ?? confidenceScores["viz_ocr_confidence"] ?? 0.94;
+                if (typeof rawConf === "number" && rawConf <= 1.0) {
+                  rawConf = Math.round(rawConf * 100);
+                }
+                const conf = typeof rawConf === "number" ? rawConf : 94;
+                const confColor = conf >= 90 ? '#10B981' : conf >= 80 ? '#F59E0B' : '#EF4444';
 
-              const confColor = conf >= 90 ? '#10B981' : conf >= 80 ? '#F59E0B' : '#EF4444';
-
-              return (
-                <div key={idx} style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{key}</span>
-                    <strong style={{ color: 'var(--text-dark)', wordBreak: 'break-word', textAlign: 'right' }}>{ocr.parsedFields[key]}</strong>
-                  </div>
-                  
-                  {/* Confidence bar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ flex: 1, height: '4px', background: '#E2E8F0', borderRadius: '2px' }}>
-                      <div style={{ width: `${conf}%`, height: '100%', background: confColor, borderRadius: '2px' }} />
+                return (
+                  <div key={idx} style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{key}</span>
+                      <strong style={{ color: 'var(--text-dark)', wordBreak: 'break-word', textAlign: 'right' }}>{String(parsedFields[key])}</strong>
                     </div>
-                    <span style={{ fontSize: '11px', fontWeight: '600', color: confColor, width: '40px', textAlign: 'right' }}>
-                      {conf}%
-                    </span>
+                    
+                    {/* Confidence bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ flex: 1, height: '4px', background: '#E2E8F0', borderRadius: '2px' }}>
+                        <div style={{ width: `${Math.min(100, Math.max(10, conf))}%`, height: '100%', background: confColor, borderRadius: '2px' }} />
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: confColor, width: '40px', textAlign: 'right' }}>
+                        {conf}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No structured fields extracted.</p>
+            )}
           </div>
         </Panel>
 
