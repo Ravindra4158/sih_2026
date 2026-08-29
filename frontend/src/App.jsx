@@ -10,6 +10,12 @@ import TwoFactor from "./pages/TwoFactor";
 import DashboardLayout from "./pages/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Screening from "./pages/Screening";
+import Result from "./pages/Result";
+import Cases from "./pages/Cases";
+import Analytics from "./pages/Analytics";
+import PendingCases from "./pages/PendingCases";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
@@ -34,12 +40,12 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="screening" element={<Screening />} />
-            {/* Placeholders for other routes */}
-            <Route path="history" element={<div className="content"><h2>Case History</h2></div>} />
-            <Route path="pending" element={<div className="content"><h2>Pending Cases</h2></div>} />
-            <Route path="reports" element={<div className="content"><h2>Reports</h2></div>} />
-            <Route path="notifications" element={<div className="content"><h2>Notifications</h2></div>} />
-            <Route path="settings" element={<div className="content"><h2>Settings</h2></div>} />
+            <Route path="result" element={<Result />} />
+            <Route path="history" element={<Cases />} />
+            <Route path="pending" element={<PendingCases />} />
+            <Route path="reports" element={<Analytics />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
