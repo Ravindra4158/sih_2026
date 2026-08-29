@@ -172,9 +172,9 @@ export default function ScreeningResult() {
       </div>
 
       {/* Hero Assessment Row */}
-      <div className="result-hero-grid" style={{ background: 'white', borderRadius: '12px', border: '1px solid var(--border)', padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '32px', marginBottom: '24px' }}>
+      <div className="result-hero-grid" style={{ background: 'white', borderRadius: '12px', border: '1px solid var(--border)', padding: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '32px', marginBottom: '24px' }}>
         {/* Score box */}
-        <div style={{ borderRight: '1px solid var(--border)', paddingRight: '16px' }}>
+        <div style={{ paddingRight: '16px' }}>
           <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>COMPUTED RISK SCORE</span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', margin: '16px 0 8px' }}>
             <span style={{ fontSize: '48px', fontWeight: '800', color: riskColor, lineHeight: '1' }}>
@@ -188,7 +188,7 @@ export default function ScreeningResult() {
         </div>
 
         {/* Dynamic gauge animation */}
-        <div style={{ borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingRight: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingRight: '16px' }}>
           <div style={{ position: 'relative', width: '130px', height: '65px', overflow: 'hidden' }}>
             <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '12px solid #F1F5F9', borderTopColor: riskColor, borderRightColor: isHigh || isMed ? riskColor : '#F1F5F9', borderBottomColor: '#F1F5F9', transform: 'rotate(-45deg)' }} />
             <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', textAlign: 'center' }}>
@@ -225,7 +225,7 @@ export default function ScreeningResult() {
       </div>
 
       {/* Details / Warnings Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         {/* Validation findings */}
         <Panel title="AUTOMATED VERIFICATION CHECKS">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '8px 0' }}>

@@ -137,7 +137,7 @@ export default function CaseReview() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', alignItems: 'start' }}>
         
         {/* Left Side: Decision Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -167,7 +167,7 @@ export default function CaseReview() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                 <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)' }}>SELECT FINAL ACTION RESOLUTION:</span>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
                   
                   <button 
                     onClick={() => handleDecision("Approved")}
@@ -204,7 +204,7 @@ export default function CaseReview() {
 
           {/* Quick Case Identifiers */}
           <Panel title="CANDIDATE DOSSIER INFO">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '13px', padding: '8px 0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', fontSize: '13px', padding: '8px 0' }}>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Name:</span>
                 <strong>{caseData.name}</strong>

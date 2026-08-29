@@ -130,7 +130,7 @@ export default function DocumentDataDetail() {
       </div>
 
       {/* Data Layout Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         
         {/* Left: Raw OCR text */}
         <section className="panel" style={{ display: 'flex', flexDirection: 'column', height: '480px', padding: '0', overflow: 'hidden' }}>

@@ -146,11 +146,11 @@ export default function BiometricsDetail() {
       </div>
 
       {/* Biometric Comparison Panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         
         {/* Left Column: Photos Comparison */}
         <Panel title="PORTRAIT MATCHING (SIDE-BY-SIDE)">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '16px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px', padding: '16px 0' }}>
             
             {/* ID Document Photo */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -244,7 +244,7 @@ export default function BiometricsDetail() {
               
               {/* SVG Line Graph */}
               <div style={{ background: '#0F172A', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
-                <svg width={width} height={height}>
+                <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height}>
                   {/* Grid Lines */}
                   <line x1={padding} y1={height/2} x2={width-padding} y2={height/2} stroke="#334155" strokeDasharray="3" />
                   <line x1={padding} y1={height-padding} x2={width-padding} y2={height-padding} stroke="#334155" strokeDasharray="3" />

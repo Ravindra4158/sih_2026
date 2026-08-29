@@ -128,7 +128,7 @@ export default function ScreeningPipeline() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', alignItems: 'start' }}>
         {/* Step checklist */}
         <section className="panel" style={{ padding: '24px' }}>
           <div className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>

@@ -131,11 +131,11 @@ export default function ForensicsDetail() {
       </div>
 
       {/* Analysis Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         
         {/* Heatmaps side-by-side */}
         <Panel title="COMPRESSION RE-SAVE DIFFERENTIAL (SIDE-BY-SIDE)">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', padding: '16px 0', justifyItems: 'center' }}>
             
             {/* Original */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
