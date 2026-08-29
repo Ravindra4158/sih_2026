@@ -1,1 +1,1 @@
-"""Stable adapter boundaries for the preserved third-party model repositories."""
+# Init file for models

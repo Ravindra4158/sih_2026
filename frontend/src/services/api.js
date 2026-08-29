@@ -41,3 +41,10 @@ export async function verifyDocument(file, selfie) {
   if (!response.ok) throw new Error(body.detail ?? "Unable to verify document.");
   return body;
 }
+
+export async function listVerifications() {
+  const response = await fetch(`${API_BASE_URL}/verification`);
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail ?? "Unable to load verification history.");
+  return body;
+}

@@ -5,7 +5,7 @@ A modular hackathon MVP scaffold for reviewing identity documents. It is designe
 ## Current working flow
 
 ```text
-React/Vite upload form → `POST /api/v1/documents/process` → validation → preprocessing → OCR → rule-based type detection → field extraction → structural validation → JSON result in the browser
+React/Vite upload form → `POST /api/v1/verification/documents/verify` → upload validation → preprocessing → OCR → rule-based type detection → field extraction → structural validation → available model adapters → risk assessment → explainable JSON result
 ```
 
 The implementation accepts a single PDF, JPEG, or PNG document (10 MB maximum by default), validates its metadata and signature, uses short-lived temporary storage, then returns available extracted fields. Documents are not retained. It supports Aadhaar, passport, PAN, driving licence, and `unknown` classification. Type detection is currently rule-based—not an AI model.
@@ -32,7 +32,7 @@ Future authenticity, biometric, and risk stages
 
 ## Current MVP scope
 
-Tesseract OCR, PyMuPDF PDF rendering, rule-based classification, field extraction, and format/date validation are implemented. Tampering detection, face verification, government verification, watchlists, risk scoring, and all external AI-model integrations are not implemented in this phase.
+Tesseract OCR, PyMuPDF PDF rendering, rule-based classification, field extraction, format/date validation, Python-ELA inspection, optional MRZ Reader integration, optional DeepFace face comparison, deterministic risk scoring, metadata-only history, and JSON reports are implemented. MRZ Reader and DeepFace require their optional runtimes/weights. Results are screening evidence, not authenticity proof.
 
 ## Layout
 
@@ -108,6 +108,8 @@ curl -F 'file=@path/to/synthetic-pan.pdf;type=application/pdf' \
 
 It returns document type, processed page count, OCR page text, extracted fields, and structural validation signals. `confidence: null` on extracted fields is intentional: Tesseract token confidence is not reliable field-level evidence.
 
+`POST /api/v1/verification/documents/verify` runs the complete available pipeline and accepts an optional `selfie` image for passport face comparison. `GET /api/v1/verification` lists metadata-only history, `GET /api/v1/verification/{id}` returns a report, and `GET /api/v1/documents/{id}/report` provides the report-compatible route. `GET /api/v1/health` returns liveness plus per-service readiness.
+
 Image preparation corrects EXIF orientation, resizes, applies median noise reduction, and normalizes contrast. Automatic perspective correction is not yet available because no reliable corner-detection model has been integrated; this is intentionally reported as a limitation rather than silently claiming correction.
 
 ## Development workflow
@@ -123,6 +125,12 @@ pytest
 ```
 
 The tests cover upload validation, temporary-file cleanup, image/PDF processing, OCR failures, unknown documents, Aadhaar/passport/PAN extraction, and date/number validation with synthetic data.
+
+The audit status, prioritized backlog, and evidence are in [PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md). The executable manual test matrix is in [MANUAL_TESTING.md](docs/MANUAL_TESTING.md). Obsidian-compatible project notes are in `docs/obsidian/`.
+
+## Security and limitations
+
+Uploads are restricted by size, extension, MIME type, and file signature, use generated temporary names, and are deleted after processing. History excludes raw documents, OCR text, and extracted identity fields. Authentication, rate limiting, malware scanning, durable encrypted persistence, calibrated fraud probabilities, and government/watchlist checks are not implemented.
 
 Or run the development containers:
 

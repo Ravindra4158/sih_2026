@@ -1,22 +1,33 @@
-"""FastAPI application entry point."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.api.routes import cases, documents, health, screening, verification
-from app.config.logging import configure_logging
-from app.config.settings import settings
+from .api.v1 import router as api_v1_router
 
-configure_logging(settings.log_level)
-app = FastAPI(title=settings.app_name, version="0.1.0")
+app = FastAPI(
+    title="AI Border Screening API",
+    version="1.0.0",
+    description="Asynchronous FastAPI backend orchestrating document screening micro‑services.",
+    docs_url="/swagger",
+    openapi_url="/openapi.json",
+    redoc_url=None,
+)
+
+# Optional CORS (adjust origins as needed)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=False,
+    allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(health.router, prefix=settings.api_prefix)
-app.include_router(screening.router, prefix=settings.api_prefix)
-app.include_router(documents.router, prefix=settings.api_prefix)
-app.include_router(verification.router, prefix=settings.api_prefix)
-app.include_router(cases.router, prefix=settings.api_prefix)
+
+app.include_router(api_v1_router, prefix="/api/v1")
+
+# Global exception handler example
+@app.exception_handler(Exception)
+async def generic_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)}
+    )

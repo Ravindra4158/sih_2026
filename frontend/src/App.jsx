@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 
-import { verifyDocument } from "./services/api";
+import { listVerifications, verifyDocument } from "./services/api";
 
 /** Upload boundary for the future officer review dashboard. */
 export default function App() {
@@ -9,6 +9,15 @@ export default function App() {
   const [status, setStatus] = useState("Select a PDF, JPEG, or PNG document to begin.");
   const [result, setResult] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  async function loadHistory() {
+    try {
+      setHistory(await listVerifications());
+    } catch (error) {
+      setStatus(error.message);
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -23,6 +32,7 @@ export default function App() {
     try {
       const processingResult = await verifyDocument(file, selfie);
       setResult(processingResult);
+      loadHistory();
       setStatus("Processing complete.");
     } catch (error) {
       setStatus(error.message);
@@ -45,6 +55,16 @@ export default function App() {
             type="file"
           />
         </label>
+        <div
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            setFile(event.dataTransfer.files?.[0] ?? null);
+          }}
+          style={{ border: "1px dashed #4175a3", padding: "1rem", textAlign: "center" }}
+        >
+          Drop a supported synthetic document here
+        </div>
         {file && <p>Selected: {file.name} ({Math.ceil(file.size / 1024)} KB)</p>}
         <label>
           Selfie (optional; used only when a passport portrait is detected)
@@ -85,6 +105,11 @@ export default function App() {
           <ul>{result.limitations.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
       )}
+      <section aria-label="Verification history">
+        <h2>Recent verification history</h2>
+        <button onClick={loadHistory} type="button">Refresh history</button>
+        {history.length ? <ul>{history.map((item) => <li key={item.document_id}>{item.document_id}: {item.document_type.name} - {item.risk_level} ({item.risk_score})</li>)}</ul> : <p>No metadata-only history loaded.</p>}
+      </section>
     </main>
   );
 }

@@ -1,5 +1,6 @@
 """Environment-backed application settings."""
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 
 class Settings(BaseSettings):
@@ -8,7 +9,7 @@ class Settings(BaseSettings):
     app_name: str = "AI-Based Fake Identity & Document Screening System"
     environment: str = "development"
     log_level: str = "INFO"
-    database_url: str = "sqlite:///./screening.db"
+    database_url: str = os.getenv("MONGODB_URI", "sqlite:///./screening.db")
     api_prefix: str = "/api/v1"
     max_upload_size_bytes: int = 10 * 1024 * 1024
     upload_temp_dir: str = "/tmp/ai-border-screening-uploads"

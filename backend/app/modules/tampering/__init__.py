@@ -1,1 +1,0 @@
-"""Image tampering detection boundaries."""
