@@ -1,87 +1,13 @@
-import { useEffect, useState } from "react";
+import { } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Fingerprint, Eye, Database, CheckCircle, AlertTriangle, AlertCircle, Info, ShieldCheck } from "lucide-react";
 import { Panel } from "./DashboardLayout";
-import { mockDatabase } from "../utils/mockDatabase";
+import { useCaseData } from "../hooks/useCaseData";
 
 export default function ForensicsDetail() {
   const { id } = useParams();
-  const [caseData, setCaseData] = useState(null);
+  const { caseData, loading } = useCaseData(id);
 
-  useEffect(() => {
-    let data = mockDatabase.getCaseById(id);
-    if (!data) {
-      const isDemoTampered = id && (id.charCodeAt(id.length - 1) % 2 === 1);
-      data = {
-        id: id || "BR-2026-00124",
-        date: new Date().toLocaleString("en-IN", { hour12: true, dateStyle: "medium", timeStyle: "short" }),
-        name: isDemoTampered ? "Mohd. Arif" : "Anjali Gupta",
-        docType: "Passport",
-        docNo: isDemoTampered ? "P9876543" : "P5539201",
-        riskLevel: isDemoTampered ? "High" : "Low",
-        status: "Pending",
-        officer: "Rajesh K.",
-        reviewNotes: "",
-        details: {
-          dob: isDemoTampered ? "05/04/1993" : "12/06/1994",
-          nationality: "Indian",
-          gender: "Male",
-          issueDate: isDemoTampered ? "15/01/2016" : "14/08/2021",
-          expiryDate: isDemoTampered ? "14/01/2026" : "13/08/2031"
-        },
-        iqa: {
-          blurScore: 0.05,
-          glareDetected: isDemoTampered,
-          passQualityCheck: true
-        },
-        ocr: {
-          rawText: isDemoTampered 
-            ? "REPUBLIC OF INDIA\nPASSPORT\nP9876543\nARIF\nMOHAMMED"
-            : "REPUBLIC OF INDIA\nPASSPORT\nP5539201\nGUPTA\nANJALI",
-          parsedFields: {
-            "Document Type": "Passport",
-            "Document Number": isDemoTampered ? "P9876543" : "P5539201",
-            "Full Name": isDemoTampered ? "Mohd. Arif" : "Anjali Gupta",
-            "Date of Birth": isDemoTampered ? "05/04/1993" : "12/06/1994"
-          },
-          confidenceScores: {
-            "Document Number": 99.1,
-            "Full Name": 98.6
-          }
-        },
-        forensics: {
-          tamperDetected: isDemoTampered,
-          tamperConfidenceScore: isDemoTampered ? 87.5 : 4.2,
-          anomalyRegions: isDemoTampered ? [
-            {
-              region_label: "Digital Alteration (Expiry Date Zone)",
-              bounding_box: { x: 260, y: 180, width: 130, height: 28 },
-              error_variance: 58.4
-            }
-          ] : [],
-          elaHeatmapBase64: isDemoTampered ? "MOCK_ELA" : null
-        },
-        biometrics: {
-          faceMatchScore: isDemoTampered ? 48.2 : 93.8,
-          verificationStatus: isDemoTampered ? "MISMATCH" : "MATCH_CONFIRMED",
-          livenessCheck: {
-            isLive: true,
-            blinkDetected: true,
-            minimumEar: 0.17,
-            padScore: 0.94
-          },
-          earFrameSeries: [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]
-        },
-        warnings: isDemoTampered ? [
-          "DOCUMENT_EXPIRED: Expiry date 14/01/2026 is in the past.",
-          "ELA_TAMPERING_DETECTED: High digital re-compression variance in expiry date region.",
-          "BIOMETRIC_MISMATCH: Face comparison similarity is 48.2% (fails identity threshold)."
-        ] : []
-      };
-      mockDatabase.saveCase(data);
-    }
-    setCaseData(data);
-  }, [id]);
 
   if (!caseData) {
     return (
@@ -176,28 +102,34 @@ export default function ForensicsDetail() {
 
             {/* ELA Heatmap */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: '220px', height: '145px', background: '#0F172A', borderRadius: '6px', border: '1px solid #1E293B', display: 'flex', flexDir: 'column', padding: '12px', justifyContent: 'space-between' }}>
-                {/* Simulated ELA black background with neon speckles */}
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.15, background: 'radial-gradient(circle, #818CF8 1px, transparent 1px) 0 0/8px 8px' }} />
-                
-                {/* Normal uniform compression pixels */}
-                <div style={{ width: '30px', height: '40px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', opacity: 0.3 }} />
-
-                {/* Highlighted anomaly neon glow overlay */}
-                {isTampered && anomalyRegions.map((r, idx) => (
-                  <div key={idx} style={{ 
-                    position: 'absolute', 
-                    border: '2px solid #F43F5E', 
-                    background: 'rgba(244, 63, 94, 0.25)',
-                    boxShadow: '0 0 10px #F43F5E',
-                    left: `${(r.bounding_box?.x || 0) * 220 / 400}px`,
-                    top: `${(r.bounding_box?.y || 0) * 145 / 300}px`,
-                    width: `${(r.bounding_box?.width || 50) * 220 / 400}px`,
-                    height: `${(r.bounding_box?.height || 20) * 145 / 300}px`,
-                    pointerEvents: 'none'
-                  }} />
-                ))}
-              </div>
+              {forensics.elaHeatmapBase64 && forensics.elaHeatmapBase64.startsWith('data:image') ? (
+                <div style={{ position: 'relative', width: '220px', height: '145px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #1E293B' }}>
+                   <img src={forensics.elaHeatmapBase64} alt="ELA Heatmap" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              ) : (
+                <div style={{ position: 'relative', width: '220px', height: '145px', background: '#0F172A', borderRadius: '6px', border: '1px solid #1E293B', display: 'flex', flexDirection: 'column', padding: '12px', justifyContent: 'space-between' }}>
+                  {/* Simulated ELA black background with neon speckles */}
+                  <div style={{ position: 'absolute', inset: 0, opacity: 0.15, background: 'radial-gradient(circle, #818CF8 1px, transparent 1px) 0 0/8px 8px' }} />
+                  
+                  {/* Normal uniform compression pixels */}
+                  <div style={{ width: '30px', height: '40px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', opacity: 0.3 }} />
+  
+                  {/* Highlighted anomaly neon glow overlay */}
+                  {isTampered && anomalyRegions.map((r, idx) => (
+                    <div key={idx} style={{ 
+                      position: 'absolute', 
+                      border: '2px solid #F43F5E', 
+                      background: 'rgba(244, 63, 94, 0.25)',
+                      boxShadow: '0 0 10px #F43F5E',
+                      left: `${(r.bounding_box?.x || 0) * 220 / 400}px`,
+                      top: `${(r.bounding_box?.y || 0) * 145 / 300}px`,
+                      width: `${(r.bounding_box?.width || 50) * 220 / 400}px`,
+                      height: `${(r.bounding_box?.height || 20) * 145 / 300}px`,
+                      pointerEvents: 'none'
+                    }} />
+                  ))}
+                </div>
+              )}
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Error Level Analysis Heatmap</span>
             </div>
 
@@ -248,6 +180,25 @@ export default function ForensicsDetail() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', background: '#F0FDF4', borderRadius: '6px', color: '#166534', fontSize: '13px' }}>
                 <CheckCircle size={18} color="#15803D" />
                 <span>Forensics resolved. No structural or pixel-level manipulation anomalies were detected.</span>
+              </div>
+            )}
+          </Panel>
+
+          {/* Metadata Flags */}
+          <Panel title="EXIF & METADATA ANALYSIS">
+            {caseData.warnings && caseData.warnings.some(w => w.includes('EDITING_SOFTWARE_DETECTED')) ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '8px 0' }}>
+                {caseData.warnings.filter(w => w.includes('EDITING_SOFTWARE_DETECTED')).map((warning, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#FEF2F2', borderRadius: '6px', color: '#991B1B', fontSize: '13px', border: '1px solid #FCA5A5' }}>
+                    <AlertTriangle size={18} color="#DC2626" />
+                    <span>{warning}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px', background: '#F8FAFC', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                <CheckCircle size={18} color="#64748B" />
+                <span>No suspicious EXIF metadata or editing software signatures found.</span>
               </div>
             )}
           </Panel>

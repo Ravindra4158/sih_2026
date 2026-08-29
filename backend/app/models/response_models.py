@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 class IQAMetrics(BaseModel):
     blur_score: float = Field(..., description="Blur metric for image quality")
@@ -34,8 +34,10 @@ class ELAResponse(BaseModel):
     session_id: str = Field(...)
     tamper_detected: bool = Field(...)
     tamper_confidence_score: float = Field(...)
-    anomaly_regions: List[AnomalyRegion]
-    ela_heatmap_base64: str = Field(..., description="Base64 encoded heatmap image")
+    # Accept plain dicts (service output) or AnomalyRegion objects
+    anomaly_regions: List[Any] = Field(default_factory=list)
+    # Optional: None when ELA could not produce a heatmap (e.g. load error)
+    ela_heatmap_base64: Optional[str] = Field(None, description="Base64 encoded heatmap image")
 
 class LivenessCheck(BaseModel):
     is_live: bool = Field(...)

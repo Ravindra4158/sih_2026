@@ -6,8 +6,7 @@ import {
   Check, Eye, HelpCircle, User, CreditCard, Shield, Sparkles,
   RotateCcw, Sliders, ChevronRight, ChevronLeft, ShieldCheck, Play, Loader2
 } from "lucide-react";
-import { mockDatabase } from "../utils/mockDatabase";
-import { processOcrDocument } from "../services/api";
+import { processOcrDocument, runElaAnalysis, saveCase } from "../services/api";
 
 export default function Screening() {
   const navigate = useNavigate();
@@ -128,13 +127,22 @@ export default function Screening() {
     else if (docType.includes("PAN")) hint = "PAN";
     else if (docType.includes("Passport")) hint = "PASSPORT";
 
+    // Run OCR and ELA in parallel for speed
     let ocrResponse = null;
+    let elaResponse = null;
     try {
       if (docFile instanceof Blob || docFile instanceof File) {
-        ocrResponse = await processOcrDocument(docFile, hint);
+        const [ocrResult, elaResult] = await Promise.allSettled([
+          processOcrDocument(docFile, hint),
+          runElaAnalysis(docFile),
+        ]);
+        if (ocrResult.status === "fulfilled") ocrResponse = ocrResult.value;
+        else console.warn("OCR failed (using fallback):", ocrResult.reason);
+        if (elaResult.status === "fulfilled") elaResponse = elaResult.value;
+        else console.warn("ELA failed (using fallback):", elaResult.reason);
       }
     } catch (err) {
-      console.warn("Backend live OCR call notice (using fallback values if necessary):", err);
+      console.warn("API call error (using fallback values):", err);
     }
 
     const parsed = ocrResponse?.parsed_fields || {};
@@ -185,16 +193,24 @@ export default function Screening() {
         }
       },
       forensics: {
-        tamperDetected: simulateTampered,
-        tamperConfidenceScore: simulateTampered ? 87.5 : 4.2,
-        anomalyRegions: simulateTampered ? [
-          {
-            region_label: "Digital Modification (Expiry Date Zone)",
-            bounding_box: { x: 260, y: 180, width: 130, height: 28 },
-            error_variance: 58.4
-          }
-        ] : [],
-        elaHeatmapBase64: simulateTampered ? "MOCK_ELA" : null
+        // Prefer real ELA data; fall back to simulator values if backend unavailable
+        tamperDetected: elaResponse
+          ? elaResponse.tamper_detected
+          : simulateTampered,
+        tamperConfidenceScore: elaResponse
+          ? elaResponse.tamper_confidence_score
+          : simulateTampered ? 87.5 : 4.2,
+        anomalyRegions: elaResponse
+          ? (elaResponse.anomaly_regions ?? [])
+          : simulateTampered ? [
+              {
+                region_label: "Digital Modification (Expiry Date Zone)",
+                bounding_box: { x: 260, y: 180, width: 130, height: 28 },
+                error_variance: 58.4
+              }
+            ] : [],
+        elaHeatmapBase64: elaResponse?.ela_heatmap_base64 ?? (simulateTampered ? "MOCK_ELA" : null),
+        elaFlags: elaResponse?.flags_raised ?? [],
       },
       biometrics: {
         faceMatchScore: simulateTampered ? 48.2 : 93.8,
@@ -214,7 +230,17 @@ export default function Screening() {
       ] : []
     };
 
-    mockDatabase.saveCase(newCase);
+    // Persist to MongoDB via backend API; fall back to localStorage if offline
+    try {
+      await saveCase(newCase);
+    } catch (err) {
+      console.warn("Backend saveCase failed, storing locally:", err);
+      try {
+        const local = JSON.parse(localStorage.getItem("ai_border_cases") || "[]");
+        local.unshift(newCase);
+        localStorage.setItem("ai_border_cases", JSON.stringify(local));
+      } catch {}
+    }
     setIsSubmitting(false);
     navigate(`/screening/${uniqueId}`);
   };

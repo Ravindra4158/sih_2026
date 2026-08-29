@@ -1,6 +1,6 @@
 import asyncio
 from typing import Dict, Any
-from app.database.mongodb import get_db
+from ..database.mongodb import get_db
 
 class SessionStore:
     """Store for session data backed by MongoDB."""

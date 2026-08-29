@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, CheckCircle, Search, Filter, Download, Eye } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle, Search, Filter, Download, Eye, Loader2 } from "lucide-react";
 import { Panel } from "./DashboardLayout";
-import { mockDatabase } from "../utils/mockDatabase";
+import { getCases } from "../services/api";
 
 export default function Cases() {
   const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
 
   useEffect(() => {
-    mockDatabase.initialize();
-    setCases(mockDatabase.getAllCases());
-  }, []);
+    setLoading(true);
+    getCases({ risk: riskFilter, status: statusFilter, search: searchQuery })
+      .then(setCases)
+      .catch(() => {
+        // Fallback to localStorage
+        try { setCases(JSON.parse(localStorage.getItem("ai_border_cases") || "[]")); } catch {}
+      })
+      .finally(() => setLoading(false));
+  }, [riskFilter, statusFilter, searchQuery]);
 
   const handleDownloadReport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -29,17 +36,8 @@ export default function Cases() {
     document.body.removeChild(link);
   };
 
-  // Filter cases reactively
-  const filteredCases = cases.filter((c) => {
-    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.docNo.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRisk = riskFilter === "All" || c.riskLevel === riskFilter;
-    const matchesStatus = statusFilter === "All" || c.status === statusFilter;
-
-    return matchesSearch && matchesRisk && matchesStatus;
-  });
+  // Server-side filtering is done via API; cases is already filtered
+  const filteredCases = cases;
 
   return (
     <main className="content">
@@ -104,7 +102,13 @@ export default function Cases() {
               </tr>
             </thead>
             <tbody>
-              {filteredCases.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="9" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', display: 'inline' }} /> Loading cases...
+                  </td>
+                </tr>
+              ) : filteredCases.length > 0 ? (
                 filteredCases.map((c) => (
                   <tr key={c.id} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '500' }}>{c.id}</td>

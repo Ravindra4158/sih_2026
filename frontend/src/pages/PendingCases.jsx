@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import { Clock, Eye, ShieldAlert, ArrowRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Panel } from "./DashboardLayout";
-import { mockDatabase } from "../utils/mockDatabase";
+import { getCases } from "../services/api";
 
 export default function PendingCases() {
   const [pendingCases, setPendingCases] = useState([]);
   const location = useLocation();
 
   useEffect(() => {
-    mockDatabase.initialize();
-    const list = mockDatabase.getAllCases();
-    // Filter cases needing attention (Pending review status)
-    const filtered = list.filter(c => c.status === "Pending");
-    setPendingCases(filtered);
+    getCases({ status: "Pending" })
+      .then(setPendingCases)
+      .catch(() => {
+        try {
+          const local = JSON.parse(localStorage.getItem("ai_border_cases") || "[]");
+          setPendingCases(local.filter(c => c.status === "Pending"));
+        } catch {}
+      });
   }, [location.pathname]);
 
   return (

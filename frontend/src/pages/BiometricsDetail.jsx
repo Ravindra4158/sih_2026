@@ -1,87 +1,13 @@
-import { useEffect, useState } from "react";
+import { } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Fingerprint, Eye, Database, CheckCircle, AlertTriangle, ScanFace, Activity, ShieldCheck } from "lucide-react";
 import { Panel } from "./DashboardLayout";
-import { mockDatabase } from "../utils/mockDatabase";
+import { useCaseData } from "../hooks/useCaseData";
 
 export default function BiometricsDetail() {
   const { id } = useParams();
-  const [caseData, setCaseData] = useState(null);
+  const { caseData, loading } = useCaseData(id);
 
-  useEffect(() => {
-    let data = mockDatabase.getCaseById(id);
-    if (!data) {
-      const isDemoTampered = id && (id.charCodeAt(id.length - 1) % 2 === 1);
-      data = {
-        id: id || "BR-2026-00124",
-        date: new Date().toLocaleString("en-IN", { hour12: true, dateStyle: "medium", timeStyle: "short" }),
-        name: isDemoTampered ? "Mohd. Arif" : "Anjali Gupta",
-        docType: "Passport",
-        docNo: isDemoTampered ? "P9876543" : "P5539201",
-        riskLevel: isDemoTampered ? "High" : "Low",
-        status: "Pending",
-        officer: "Rajesh K.",
-        reviewNotes: "",
-        details: {
-          dob: isDemoTampered ? "05/04/1993" : "12/06/1994",
-          nationality: "Indian",
-          gender: "Male",
-          issueDate: isDemoTampered ? "15/01/2016" : "14/08/2021",
-          expiryDate: isDemoTampered ? "14/01/2026" : "13/08/2031"
-        },
-        iqa: {
-          blurScore: 0.05,
-          glareDetected: isDemoTampered,
-          passQualityCheck: true
-        },
-        ocr: {
-          rawText: isDemoTampered 
-            ? "REPUBLIC OF INDIA\nPASSPORT\nP9876543\nARIF\nMOHAMMED"
-            : "REPUBLIC OF INDIA\nPASSPORT\nP5539201\nGUPTA\nANJALI",
-          parsedFields: {
-            "Document Type": "Passport",
-            "Document Number": isDemoTampered ? "P9876543" : "P5539201",
-            "Full Name": isDemoTampered ? "Mohd. Arif" : "Anjali Gupta",
-            "Date of Birth": isDemoTampered ? "05/04/1993" : "12/06/1994"
-          },
-          confidenceScores: {
-            "Document Number": 99.1,
-            "Full Name": 98.6
-          }
-        },
-        forensics: {
-          tamperDetected: isDemoTampered,
-          tamperConfidenceScore: isDemoTampered ? 87.5 : 4.2,
-          anomalyRegions: isDemoTampered ? [
-            {
-              region_label: "Digital Alteration (Expiry Date Zone)",
-              bounding_box: { x: 260, y: 180, width: 130, height: 28 },
-              error_variance: 58.4
-            }
-          ] : [],
-          elaHeatmapBase64: isDemoTampered ? "MOCK_ELA" : null
-        },
-        biometrics: {
-          faceMatchScore: isDemoTampered ? 48.2 : 93.8,
-          verificationStatus: isDemoTampered ? "MISMATCH" : "MATCH_CONFIRMED",
-          livenessCheck: {
-            isLive: true,
-            blinkDetected: true,
-            minimumEar: 0.17,
-            padScore: 0.94
-          },
-          earFrameSeries: [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]
-        },
-        warnings: isDemoTampered ? [
-          "DOCUMENT_EXPIRED: Expiry date 14/01/2026 is in the past.",
-          "ELA_TAMPERING_DETECTED: High digital re-compression variance in expiry date region.",
-          "BIOMETRIC_MISMATCH: Face comparison similarity is 48.2% (fails identity threshold)."
-        ] : []
-      };
-      mockDatabase.saveCase(data);
-    }
-    setCaseData(data);
-  }, [id]);
 
   if (!caseData) {
     return (

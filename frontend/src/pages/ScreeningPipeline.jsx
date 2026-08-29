@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CheckCircle, AlertTriangle, AlertCircle, Play, ShieldAlert, Cpu } from "lucide-react";
-import { mockDatabase } from "../utils/mockDatabase";
+import { useCaseData } from "../hooks/useCaseData";
 
 export default function ScreeningPipeline() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [logs, setLogs] = useState([]);
-  const [caseData, setCaseData] = useState(null);
+  const { caseData } = useCaseData(id);
   const logEndRef = useRef(null);
 
   const steps = [
@@ -21,35 +21,6 @@ export default function ScreeningPipeline() {
     { name: "Biometric Face Matching", desc: "Comparing live photo with document portrait" },
     { name: "Liveness & Risk Score Assessment", desc: "Calculating multi-tier risk factor indicators" }
   ];
-
-  useEffect(() => {
-    // Load case data
-    let data = mockDatabase.getCaseById(id);
-    if (!data) {
-      // Create a temporary case if it doesn't exist
-      const tempCase = {
-        id,
-        date: new Date().toLocaleString(),
-        name: "Anonymous Candidate",
-        docType: "Passport",
-        docNo: "P" + Math.floor(1000000 + Math.random() * 9000000),
-        riskLevel: "Low",
-        status: "Pending",
-        officer: "Rajesh K.",
-        reviewNotes: "",
-        details: { dob: "01/01/1990", nationality: "Indian", gender: "Male", issueDate: "01/01/2020", expiryDate: "01/01/2030" },
-        iqa: { blurScore: 0.05, glareDetected: false, passQualityCheck: true },
-        ocr: { rawText: "RAW TEXT", parsedFields: {}, confidenceScores: {} },
-        forensics: { tamperDetected: false, tamperConfidenceScore: 10.0, anomalyRegions: [], elaHeatmapBase64: null },
-        biometrics: { faceMatchScore: 92.0, verificationStatus: "MATCH_CONFIRMED", livenessCheck: { isLive: true, blinkDetected: true, minimumEar: 0.16, padScore: 0.92 }, earFrameSeries: [0.3, 0.3, 0.15, 0.3] },
-        warnings: []
-      };
-      mockDatabase.saveCase(tempCase);
-      setCaseData(tempCase);
-    } else {
-      setCaseData(data);
-    }
-  }, [id]);
 
   useEffect(() => {
     if (!caseData) return;
