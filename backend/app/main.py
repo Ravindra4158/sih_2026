@@ -13,13 +13,14 @@ app = FastAPI(
     redoc_url=None,
 )
 
-# Optional CORS (adjust origins as needed)
+# Robust CORS allowing all origins, credentials, headers, and methods
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(api_v1_router, prefix="/api/v1")
