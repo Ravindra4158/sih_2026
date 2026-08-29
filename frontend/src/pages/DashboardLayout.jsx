@@ -1,17 +1,19 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import { mockDatabase } from "../utils/mockDatabase";
 import { 
-  Home, 
-  FilePlus, 
-  History, 
-  Clock, 
-  BarChart2, 
-  Bell, 
-  Settings, 
-  LogOut,
-  ShieldCheck,
-  User as UserIcon,
-  Calendar
+   Home, 
+   FilePlus, 
+   History, 
+   Clock, 
+   BarChart2, 
+   Bell, 
+   Settings, 
+   LogOut,
+   ShieldCheck,
+   User as UserIcon,
+   Calendar
 } from "lucide-react";
 
 export function Header({ title, subtitle, caseNo }) {
@@ -59,12 +61,20 @@ export function Stat({ number, label, tone = "blue", foot, trend }) {
 export default function DashboardLayout() {
   const location = useLocation();
   const { logout, user } = useAuth();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    mockDatabase.initialize();
+    const list = mockDatabase.getAllCases();
+    const pending = list.filter(c => c.status === "Pending").length;
+    setPendingCount(pending);
+  }, [location.pathname]);
   
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: Home },
     { name: "New Screening", path: "/dashboard/screening", icon: FilePlus },
     { name: "Case History", path: "/dashboard/history", icon: History },
-    { name: "Pending Cases", path: "/dashboard/pending", icon: Clock, badge: 12 },
+    { name: "Pending Cases", path: "/dashboard/pending", icon: Clock, badge: pendingCount },
     { name: "Reports", path: "/dashboard/reports", icon: BarChart2 },
     { name: "Notifications", path: "/dashboard/notifications", icon: Bell, badge: 5 },
     { name: "Profile & Settings", path: "/dashboard/settings", icon: Settings },
@@ -78,17 +88,24 @@ export default function DashboardLayout() {
           <span>Officer Panel</span>
         </div>
         <nav>
-          {navItems.map((item) => (
-            <Link 
-              key={item.name} 
-              to={item.path} 
-              className={location.pathname === item.path || (location.pathname === "/dashboard" && item.path === "/dashboard") ? "active" : ""}
-            >
-              <item.icon size={18} />
-              <span>{item.name}</span>
-              {item.badge && <span className="badge">{item.badge}</span>}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path || 
+              (location.pathname === "/dashboard" && item.path === "/dashboard") ||
+              (item.path === "/dashboard/screening" && location.pathname.startsWith("/screening")) ||
+              (item.path === "/dashboard/pending" && location.pathname.startsWith("/cases"));
+
+            return (
+              <Link 
+                key={item.name} 
+                to={item.path} 
+                className={isActive ? "active" : ""}
+              >
+                <item.icon size={18} />
+                <span>{item.name}</span>
+                {item.badge > 0 && <span className="badge">{item.badge}</span>}
+              </Link>
+            );
+          })}
           <button className="logout" onClick={logout}>
             <LogOut size={18} />
             <span>Logout</span>

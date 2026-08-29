@@ -17,6 +17,14 @@ import PendingCases from "./pages/PendingCases";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 
+// New Dynamic Pages
+import ScreeningPipeline from "./pages/ScreeningPipeline";
+import ScreeningResult from "./pages/ScreeningResult";
+import BiometricsDetail from "./pages/BiometricsDetail";
+import ForensicsDetail from "./pages/ForensicsDetail";
+import DocumentDataDetail from "./pages/DocumentDataDetail";
+import CaseReview from "./pages/CaseReview";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -46,6 +54,34 @@ export default function App() {
             <Route path="reports" element={<Analytics />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="settings" element={<Settings />} />
+          </Route>
+
+          {/* Dynamic Screening Routes */}
+          <Route 
+            path="/screening/:id" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<ScreeningPipeline />} />
+            <Route path="results" element={<ScreeningResult />} />
+            <Route path="biometrics" element={<BiometricsDetail />} />
+            <Route path="forensics" element={<ForensicsDetail />} />
+            <Route path="data" element={<DocumentDataDetail />} />
+          </Route>
+
+          {/* Dynamic Case Review Route */}
+          <Route 
+            path="/cases/:id" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<CaseReview />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
