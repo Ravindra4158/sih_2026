@@ -251,6 +251,8 @@ async def analyze_ela_image(image_path: str, jpeg_quality: int = 90) -> dict:
             "suspicious_regions": suspicious_regions,
             "flags_raised": flags,
             "ela_heatmap_url": ela_heatmap_url,
+            "image_width": W,
+            "image_height": H,
         }
 
     except Exception as e:

@@ -84,11 +84,16 @@ export async function updateCaseStatus(caseId, updates) {
  * @param {File|Blob} file         – JPEG, PNG, or PDF
  * @param {string} documentHint    – "AUTO" | "AADHAAR" | "PAN" | "PASSPORT"
  */
-export async function processOcrDocument(file, documentHint = "AUTO") {
+export async function processOcrDocument(file, documentHint = "AUTO", sessionId = null) {
   const formData = new FormData();
   formData.append("image_file", file, file.name ?? "document.jpg");
+
+  const params = new URLSearchParams();
+  params.set("document_hint", documentHint);
+  if (sessionId) params.set("session_id", sessionId);
+
   return apiFetch(
-    `/document/process-ocr?document_hint=${encodeURIComponent(documentHint)}`,
+    `/document/process-ocr?${params}`,
     { method: "POST", body: formData }
   );
 }
@@ -101,15 +106,22 @@ export async function processOcrDocument(file, documentHint = "AUTO") {
  * Upload a document image or PDF for Error Level Analysis.
  * @param {File|Blob} file       – JPEG, PNG, or PDF
  * @param {number} jpegQuality   – Re-compression quality (default 90)
+ * @param {string} sessionId     – Optional session ID to link steps
  */
-export async function runElaAnalysis(file, jpegQuality = 90) {
+export async function runElaAnalysis(file, jpegQuality = 90, sessionId = null) {
   const formData = new FormData();
   formData.append("image_file", file, file.name ?? "document.jpg");
+
+  const params = new URLSearchParams();
+  params.set("jpeg_quality", jpegQuality.toString());
+  if (sessionId) params.set("session_id", sessionId);
+
   return apiFetch(
-    `/forensics/ela-analysis?jpeg_quality=${jpegQuality}`,
+    `/forensics/ela-analysis?${params}`,
     { method: "POST", body: formData }
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // MRZ Checksum Validation

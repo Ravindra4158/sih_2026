@@ -83,19 +83,22 @@ export default function ForensicsDetail() {
                   <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--primary)', opacity: '0.2' }} />
                 </div>
 
-                {/* Annotation overlays */}
-                {isTampered && anomalyRegions.map((r, idx) => (
-                  <div key={idx} style={{ 
-                    position: 'absolute', 
-                    border: '1.5px dashed #EF4444', 
-                    // Scaled down mock bounding boxes
-                    left: `${(r.bounding_box?.x || 0) * 220 / 400}px`,
-                    top: `${(r.bounding_box?.y || 0) * 145 / 300}px`,
-                    width: `${(r.bounding_box?.width || 50) * 220 / 400}px`,
-                    height: `${(r.bounding_box?.height || 20) * 145 / 300}px`,
-                    pointerEvents: 'none'
-                  }} />
-                ))}
+                {/* Annotation overlays scaled dynamically */}
+                {isTampered && anomalyRegions.map((r, idx) => {
+                  const scaleX = forensics.imageWidth ? (220 / forensics.imageWidth) : (220 / 400);
+                  const scaleY = forensics.imageHeight ? (145 / forensics.imageHeight) : (145 / 300);
+                  return (
+                    <div key={idx} style={{ 
+                      position: 'absolute', 
+                      border: '1.5px dashed #EF4444', 
+                      left: `${(r.bounding_box?.x || 0) * scaleX}px`,
+                      top: `${(r.bounding_box?.y || 0) * scaleY}px`,
+                      width: `${(r.bounding_box?.width || 50) * scaleX}px`,
+                      height: `${(r.bounding_box?.height || 20) * scaleY}px`,
+                      pointerEvents: 'none'
+                    }} />
+                  );
+                })}
               </div>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Original Document Image</span>
             </div>
@@ -105,6 +108,25 @@ export default function ForensicsDetail() {
               {forensics.elaHeatmapBase64 && forensics.elaHeatmapBase64.startsWith('data:image') ? (
                 <div style={{ position: 'relative', width: '220px', height: '145px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #1E293B' }}>
                    <img src={forensics.elaHeatmapBase64} alt="ELA Heatmap" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                   
+                   {/* Draw overlays on top of real base64 heatmap */}
+                   {isTampered && anomalyRegions.map((r, idx) => {
+                     const scaleX = forensics.imageWidth ? (220 / forensics.imageWidth) : (220 / 400);
+                     const scaleY = forensics.imageHeight ? (145 / forensics.imageHeight) : (145 / 300);
+                     return (
+                       <div key={idx} style={{ 
+                         position: 'absolute', 
+                         border: '2px solid #F43F5E', 
+                         background: 'rgba(244, 63, 94, 0.25)',
+                         boxShadow: '0 0 10px #F43F5E',
+                         left: `${(r.bounding_box?.x || 0) * scaleX}px`,
+                         top: `${(r.bounding_box?.y || 0) * scaleY}px`,
+                         width: `${(r.bounding_box?.width || 50) * scaleX}px`,
+                         height: `${(r.bounding_box?.height || 20) * scaleY}px`,
+                         pointerEvents: 'none'
+                       }} />
+                     );
+                   })}
                 </div>
               ) : (
                 <div style={{ position: 'relative', width: '220px', height: '145px', background: '#0F172A', borderRadius: '6px', border: '1px solid #1E293B', display: 'flex', flexDirection: 'column', padding: '12px', justifyContent: 'space-between' }}>
@@ -115,19 +137,23 @@ export default function ForensicsDetail() {
                   <div style={{ width: '30px', height: '40px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', opacity: 0.3 }} />
   
                   {/* Highlighted anomaly neon glow overlay */}
-                  {isTampered && anomalyRegions.map((r, idx) => (
-                    <div key={idx} style={{ 
-                      position: 'absolute', 
-                      border: '2px solid #F43F5E', 
-                      background: 'rgba(244, 63, 94, 0.25)',
-                      boxShadow: '0 0 10px #F43F5E',
-                      left: `${(r.bounding_box?.x || 0) * 220 / 400}px`,
-                      top: `${(r.bounding_box?.y || 0) * 145 / 300}px`,
-                      width: `${(r.bounding_box?.width || 50) * 220 / 400}px`,
-                      height: `${(r.bounding_box?.height || 20) * 145 / 300}px`,
-                      pointerEvents: 'none'
-                    }} />
-                  ))}
+                  {isTampered && anomalyRegions.map((r, idx) => {
+                    const scaleX = forensics.imageWidth ? (220 / forensics.imageWidth) : (220 / 400);
+                    const scaleY = forensics.imageHeight ? (145 / forensics.imageHeight) : (145 / 300);
+                    return (
+                      <div key={idx} style={{ 
+                        position: 'absolute', 
+                        border: '2px solid #F43F5E', 
+                        background: 'rgba(244, 63, 94, 0.25)',
+                        boxShadow: '0 0 10px #F43F5E',
+                        left: `${(r.bounding_box?.x || 0) * scaleX}px`,
+                        top: `${(r.bounding_box?.y || 0) * scaleY}px`,
+                        width: `${(r.bounding_box?.width || 50) * scaleX}px`,
+                        height: `${(r.bounding_box?.height || 20) * scaleY}px`,
+                        pointerEvents: 'none'
+                      }} />
+                    );
+                  })}
                 </div>
               )}
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Error Level Analysis Heatmap</span>

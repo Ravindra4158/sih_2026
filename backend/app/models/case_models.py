@@ -27,6 +27,8 @@ class ForensicsData(BaseModel):
     anomalyRegions: List[Any] = Field(default_factory=list)
     elaHeatmapBase64: Optional[str] = None
     elaFlags: List[str] = Field(default_factory=list)
+    imageWidth: Optional[int] = None
+    imageHeight: Optional[int] = None
 
 
 class LivenessData(BaseModel):

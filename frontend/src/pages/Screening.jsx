@@ -6,7 +6,7 @@ import {
   Check, Eye, HelpCircle, User, CreditCard, Shield, Sparkles,
   RotateCcw, Sliders, ChevronRight, ChevronLeft, ShieldCheck, Play, Loader2
 } from "lucide-react";
-import { processOcrDocument, runElaAnalysis, saveCase } from "../services/api";
+import { processOcrDocument, runElaAnalysis, saveCase, verifyBiometrics, runScreening } from "../services/api";
 
 export default function Screening() {
   const navigate = useNavigate();
@@ -130,16 +130,35 @@ export default function Screening() {
     // Run OCR and ELA in parallel for speed
     let ocrResponse = null;
     let elaResponse = null;
+    let bioResponse = null;
+    let orchestrateResponse = null;
+
     try {
       if (docFile instanceof Blob || docFile instanceof File) {
         const [ocrResult, elaResult] = await Promise.allSettled([
-          processOcrDocument(docFile, hint),
-          runElaAnalysis(docFile),
+          processOcrDocument(docFile, hint, uniqueId),
+          runElaAnalysis(docFile, 90, uniqueId),
         ]);
         if (ocrResult.status === "fulfilled") ocrResponse = ocrResult.value;
-        else console.warn("OCR failed (using fallback):", ocrResult.reason);
+        else console.warn("OCR failed:", ocrResult.reason);
         if (elaResult.status === "fulfilled") elaResponse = elaResult.value;
-        else console.warn("ELA failed (using fallback):", elaResult.reason);
+        else console.warn("ELA failed:", elaResult.reason);
+
+        // Run Biometrics if selfie captured
+        if (selfiePreview) {
+          try {
+            bioResponse = await verifyBiometrics(uniqueId, docPreview, selfiePreview, [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]);
+          } catch (e) {
+            console.warn("Biometrics failed:", e);
+          }
+        }
+
+        // Run final decision orchestration on backend
+        try {
+          orchestrateResponse = await runScreening(uniqueId);
+        } catch (e) {
+          console.warn("Orchestration failed:", e);
+        }
       }
     } catch (err) {
       console.warn("API call error (using fallback values):", err);
@@ -159,8 +178,8 @@ export default function Screening() {
       name: finalName,
       docType: detectedDocType,
       docNo: finalDocNo,
-      riskLevel: simulateTampered ? "High" : "Low",
-      status: "Pending",
+      riskLevel: orchestrateResponse?.risk_level ?? (simulateTampered ? "High" : "Low"),
+      status: orchestrateResponse?.final_action ?? "Pending",
       officer: "Rajesh K.",
       reviewNotes: "",
       details: {
@@ -193,41 +212,36 @@ export default function Screening() {
         }
       },
       forensics: {
-        // Prefer real ELA data; fall back to simulator values if backend unavailable
-        tamperDetected: elaResponse
-          ? elaResponse.tamper_detected
-          : simulateTampered,
-        tamperConfidenceScore: elaResponse
-          ? elaResponse.tamper_confidence_score
-          : simulateTampered ? 87.5 : 4.2,
-        anomalyRegions: elaResponse
-          ? (elaResponse.anomaly_regions ?? [])
-          : simulateTampered ? [
+        tamperDetected: elaResponse ? elaResponse.tamper_detected : simulateTampered,
+        tamperConfidenceScore: elaResponse ? elaResponse.tamper_confidence_score : (simulateTampered ? 87.5 : 4.2),
+        anomalyRegions: elaResponse ? (elaResponse.anomaly_regions ?? []) : (simulateTampered ? [
               {
                 region_label: "Digital Modification (Expiry Date Zone)",
                 bounding_box: { x: 260, y: 180, width: 130, height: 28 },
                 error_variance: 58.4
               }
-            ] : [],
+            ] : []),
         elaHeatmapBase64: elaResponse?.ela_heatmap_base64 ?? (simulateTampered ? "MOCK_ELA" : null),
         elaFlags: elaResponse?.flags_raised ?? [],
+        imageWidth: elaResponse?.image_width ?? (simulateTampered ? 400 : null),
+        imageHeight: elaResponse?.image_height ?? (simulateTampered ? 300 : null),
       },
       biometrics: {
-        faceMatchScore: simulateTampered ? 48.2 : 93.8,
-        verificationStatus: simulateTampered ? "MISMATCH" : "MATCH_CONFIRMED",
+        faceMatchScore: bioResponse ? bioResponse.face_match_score : (simulateTampered ? 48.2 : 93.8),
+        verificationStatus: bioResponse ? bioResponse.verification_status : (simulateTampered ? "MISMATCH" : "MATCH_CONFIRMED"),
         livenessCheck: {
-          isLive: true,
-          blinkDetected: true,
-          minimumEar: 0.17,
-          padScore: 0.94
+          isLive: bioResponse ? bioResponse.liveness_check.is_live : true,
+          blinkDetected: bioResponse ? bioResponse.liveness_check.blink_detected : true,
+          minimumEar: bioResponse ? bioResponse.liveness_check.minimum_ear : 0.17,
+          padScore: bioResponse ? bioResponse.liveness_check.pad_score : 0.94
         },
         earFrameSeries: [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]
       },
-      warnings: simulateTampered ? [
+      warnings: orchestrateResponse?.summary_flags || (simulateTampered ? [
         "DOCUMENT_EXPIRED: Expiry date 13/08/2026 is in the past.",
         "ELA_TAMPERING_DETECTED: High digital re-compression variance in expiry date region.",
         "BIOMETRIC_MISMATCH: Face comparison similarity is 48.2% (fails identity threshold)."
-      ] : []
+      ] : [])
     };
 
     // Persist to MongoDB via backend API; fall back to localStorage if offline
