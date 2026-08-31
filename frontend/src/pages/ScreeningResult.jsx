@@ -111,7 +111,7 @@ export default function ScreeningResult() {
           <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>COMPUTED RISK SCORE</span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', margin: '16px 0 8px' }}>
             <span style={{ fontSize: '48px', fontWeight: '800', color: riskColor, lineHeight: '1' }}>
-              {isHigh ? 91 : isMed ? 64 : 14}
+              {caseData.overall_risk_score ?? (isHigh ? 91 : isMed ? 64 : 14)}
             </span>
             <span style={{ fontSize: '18px', color: 'var(--text-muted)' }}>/100</span>
           </div>
