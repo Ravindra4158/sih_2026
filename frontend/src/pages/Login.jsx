@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Shield, Lock, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
+import { User, Shield, Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -8,6 +8,7 @@ export default function Login() {
   const [role, setRole] = useState("officer"); // 'officer' | 'admin'
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -111,13 +112,22 @@ export default function Login() {
         <div className="input-group">
           <Lock className="input-icon" size={18} />
           <input 
-            type="password" 
+            type={showPassword ? "text" : "password"} 
             placeholder="Password" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <EyeOff className="input-icon-right" size={18} />
+          <button 
+            type="button" 
+            className="input-icon-right" 
+            onClick={() => setShowPassword(!showPassword)}
+            style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--text-muted)' }}
+            title={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
         </div>
 
         <div className="form-options">

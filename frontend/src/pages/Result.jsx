@@ -52,15 +52,15 @@ export default function Result() {
 
       <div className="result-details-grid">
         <Panel title="DOCUMENT DETAILS">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 20px' }}>
             {[
               ["Document Type", "Passport"], ["Passport Number", "P1234567"], 
               ["Name", "Rahul Sharma"], ["Nationality", "Indian"], 
               ["Date of Birth", "12/05/1998"], ["Gender", "Male"], 
               ["Date of Issue", "10/06/2020"], ["Date of Expiry", "09/08/2030"]
             ].map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px', fontSize: '13px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{item[0]}</span>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF', border: '1px solid #EEF2F6', fontSize: '13px' }}>
+                <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{item[0]}</span>
                 <strong style={{ color: 'var(--text-dark)' }}>{item[1]}</strong>
               </div>
             ))}
@@ -68,7 +68,7 @@ export default function Result() {
         </Panel>
 
         <Panel title="FINDINGS">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 20px' }}>
             {[
               ["Document Format", "Valid", "green", true],
               ["MRZ Consistency", "Match", "green", true],
@@ -77,12 +77,12 @@ export default function Result() {
               ["Tampering Analysis", "Suspicious", "red", false],
               ["Face Verification", "Match (96%)", "green", true]
             ].map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dark)' }}>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF', border: '1px solid #EEF2F6', fontSize: '13px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-dark)', fontWeight: '500' }}>
                   {item[3] ? <CheckCircle size={16} color="#16A34A" /> : <AlertTriangle size={16} color="#DC2626" />}
                   {item[0]}
                 </span>
-                <strong className={`text-${item[2]}`}>{item[1]}</strong>
+                <span className={`recent-status status-${item[2]}`}>{item[1]}</span>
               </div>
             ))}
           </div>

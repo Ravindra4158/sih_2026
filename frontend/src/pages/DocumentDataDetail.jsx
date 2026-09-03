@@ -73,7 +73,7 @@ export default function DocumentDataDetail() {
 
         {/* Right: Parsed key-values with confidence meters */}
         <Panel title="PARSED IDENTIFIER FIELDS">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 20px' }}>
             {parsedKeys.length > 0 ? (
               parsedKeys.map((key, idx) => {
                 let rawConf = confidenceScores[key] ?? confidenceScores["viz_ocr_confidence"] ?? 0.94;
@@ -84,18 +84,26 @@ export default function DocumentDataDetail() {
                 const confColor = conf >= 90 ? '#10B981' : conf >= 80 ? '#F59E0B' : '#EF4444';
 
                 return (
-                  <div key={idx} style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px', fontSize: '13px' }}>
+                  <div 
+                    key={idx} 
+                    style={{ 
+                      padding: '12px 16px', 
+                      borderRadius: '8px', 
+                      backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF', 
+                      border: '1px solid #EEF2F6' 
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px', fontSize: '13px' }}>
                       <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{key}</span>
                       <strong style={{ color: 'var(--text-dark)', wordBreak: 'break-word', textAlign: 'right' }}>{String(parsedFields[key])}</strong>
                     </div>
                     
                     {/* Confidence bar */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ flex: 1, height: '4px', background: '#E2E8F0', borderRadius: '2px' }}>
-                        <div style={{ width: `${Math.min(100, Math.max(10, conf))}%`, height: '100%', background: confColor, borderRadius: '2px' }} />
+                      <div style={{ flex: 1, height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, Math.max(10, conf))}%`, height: '100%', background: confColor, borderRadius: '3px' }} />
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: '600', color: confColor, width: '40px', textAlign: 'right' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: confColor, width: '42px', textAlign: 'right' }}>
                         {conf}%
                       </span>
                     </div>
@@ -103,7 +111,7 @@ export default function DocumentDataDetail() {
                 );
               })
             ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No structured fields extracted.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '8px 0' }}>No structured fields extracted.</p>
             )}
           </div>
         </Panel>

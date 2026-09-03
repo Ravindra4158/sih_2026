@@ -112,7 +112,7 @@ export default function Settings() {
 
           {/* Navigation panel */}
           <Panel title="CONSOLE SETTINGS">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '8px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '12px 14px' }}>
               {navItems.map((item) => {
                 const isActive = activeTab === item.id;
                 const Icon = item.icon;
@@ -151,7 +151,7 @@ export default function Settings() {
           {/* Panel 1: Profile Information */}
           {activeTab === "profile" && (
             <Panel title="Profile Information" className="fade-in">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px 20px' }}>
                 
                 {/* Full name input group */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -216,36 +216,41 @@ export default function Settings() {
           {/* Panel 2: Password & Security */}
           {activeTab === "security" && (
             <Panel title="Security &amp; Authorization Credentials" className="fade-in">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px 20px' }}>
                 
                 {/* 2FA Slide Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', gap: '16px' }}>
+                  <div style={{ flex: 1 }}>
                     <strong style={{ display: 'block', fontSize: '13.5px', marginBottom: '4px', color: 'var(--text-dark)' }}>Two-Factor Authentication (2FA)</strong>
                     <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Require a temporary dynamic token during checkpoint logs.</span>
                   </div>
                   <div 
                     onClick={() => setTwoFactor(!twoFactor)}
+                    role="switch"
+                    aria-checked={twoFactor}
                     style={{ 
-                      width: '46px', 
+                      width: '44px', 
                       height: '24px', 
-                      background: twoFactor ? 'var(--primary)' : '#E2E8F0', 
+                      minWidth: '44px',
+                      flexShrink: 0,
+                      background: twoFactor ? 'var(--primary)' : '#CBD5E1', 
                       borderRadius: '12px', 
-                      position: 'relative', 
+                      padding: '2px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      alignItems: 'center',
                       cursor: 'pointer',
-                      transition: 'background-color 0.2s' 
+                      transition: 'background-color 0.2s ease' 
                     }}
                   >
                     <div style={{ 
-                      width: '18px', 
-                      height: '18px', 
+                      width: '20px', 
+                      height: '20px', 
                       background: 'white', 
                       borderRadius: '50%', 
-                      position: 'absolute', 
-                      top: '3px', 
-                      left: twoFactor ? '25px' : '3px', 
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)' 
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                      transform: twoFactor ? 'translateX(20px)' : 'translateX(0)',
+                      transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)' 
                     }} />
                   </div>
                 </div>
@@ -272,36 +277,41 @@ export default function Settings() {
           {/* Panel 3: Notifications */}
           {activeTab === "notifications" && (
             <Panel title="Command Alerts &amp; Telemetry Notifications" className="fade-in">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px 20px' }}>
                 
                 {/* Email Reports Slide Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                  <div style={{ flex: 1 }}>
                     <strong style={{ display: 'block', fontSize: '13.5px', marginBottom: '4px', color: 'var(--text-dark)' }}>Email Shift Summary Reports</strong>
                     <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Receive daily CSV screening log audits at shift end.</span>
                   </div>
                   <div 
                     onClick={() => setEmailAlerts(!emailAlerts)}
+                    role="switch"
+                    aria-checked={emailAlerts}
                     style={{ 
-                      width: '46px', 
+                      width: '44px', 
                       height: '24px', 
-                      background: emailAlerts ? 'var(--primary)' : '#E2E8F0', 
+                      minWidth: '44px',
+                      flexShrink: 0,
+                      background: emailAlerts ? 'var(--primary)' : '#CBD5E1', 
                       borderRadius: '12px', 
-                      position: 'relative', 
+                      padding: '2px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      alignItems: 'center',
                       cursor: 'pointer',
-                      transition: 'background-color 0.2s' 
+                      transition: 'background-color 0.2s ease' 
                     }}
                   >
                     <div style={{ 
-                      width: '18px', 
-                      height: '18px', 
+                      width: '20px', 
+                      height: '20px', 
                       background: 'white', 
                       borderRadius: '50%', 
-                      position: 'absolute', 
-                      top: '3px', 
-                      left: emailAlerts ? '25px' : '3px', 
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)' 
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                      transform: emailAlerts ? 'translateX(20px)' : 'translateX(0)',
+                      transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)' 
                     }} />
                   </div>
                 </div>
@@ -309,33 +319,38 @@ export default function Settings() {
                 <hr style={{ border: 'none', borderTop: '1px solid var(--border)' }} />
 
                 {/* Audio Alarms Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                  <div style={{ flex: 1 }}>
                     <strong style={{ display: 'block', fontSize: '13.5px', marginBottom: '4px', color: 'var(--text-dark)' }}>High Risk Audio Alarms</strong>
                     <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Play alarm audio when a TAMPER / MISMATCH signal is raised.</span>
                   </div>
                   <div 
                     onClick={() => setAudioAlarms(!audioAlarms)}
+                    role="switch"
+                    aria-checked={audioAlarms}
                     style={{ 
-                      width: '46px', 
+                      width: '44px', 
                       height: '24px', 
-                      background: audioAlarms ? 'var(--primary)' : '#E2E8F0', 
+                      minWidth: '44px',
+                      flexShrink: 0,
+                      background: audioAlarms ? 'var(--primary)' : '#CBD5E1', 
                       borderRadius: '12px', 
-                      position: 'relative', 
+                      padding: '2px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      alignItems: 'center',
                       cursor: 'pointer',
-                      transition: 'background-color 0.2s' 
+                      transition: 'background-color 0.2s ease' 
                     }}
                   >
                     <div style={{ 
-                      width: '18px', 
-                      height: '18px', 
+                      width: '20px', 
+                      height: '20px', 
                       background: 'white', 
                       borderRadius: '50%', 
-                      position: 'absolute', 
-                      top: '3px', 
-                      left: audioAlarms ? '25px' : '3px', 
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)' 
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                      transform: audioAlarms ? 'translateX(20px)' : 'translateX(0)',
+                      transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)' 
                     }} />
                   </div>
                 </div>
@@ -347,7 +362,7 @@ export default function Settings() {
           {/* Panel 4: Data Privacy */}
           {activeTab === "privacy" && (
             <Panel title="Retaining Rules &amp; Privacy Audits" className="fade-in">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px 20px' }}>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)' }}>Dossier Verification Retention Log Duration</label>

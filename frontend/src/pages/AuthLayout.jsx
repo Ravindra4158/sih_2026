@@ -8,13 +8,13 @@ export default function AuthLayout() {
         <div className="auth-sidebar-header">
           <span>PS 188 - AI-Based Fake Identity &amp;</span>
           <span>Document Screening System</span>
-          <div className="emblem-placeholder">
+          <div className="emblem-placeholder" style={{ marginBottom: '1.25rem' }}>
             {/* National Emblem Placeholder */}
           </div>
         </div>
 
         <div className="auth-sidebar-brand">
-          <div className="brand-shield">
+          <div className="brand-shield" style={{ marginTop: '0.25rem' }}>
             <ShieldCheck size={40} className="shield-icon" />
           </div>
           <h2>PS 188</h2>

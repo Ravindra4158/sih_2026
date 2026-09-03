@@ -93,7 +93,16 @@ export default function Dashboard() {
 
           <Panel title="Risk Distribution">
             <div className="donut-row">
-              <div className="donut">
+              <div 
+                className="donut"
+                style={{
+                  background: total > 0 ? `conic-gradient(
+                    #22C55E 0% ${Math.round(approved/total*100)}%,
+                    #F59E0B ${Math.round(approved/total*100)}% ${Math.round((approved+medium)/total*100)}%,
+                    #EF4444 ${Math.round((approved+medium)/total*100)}% 100%
+                  )` : undefined
+                }}
+              >
                 <div className="donut-center">
                   <strong>{loading ? "…" : total}</strong>
                   <span>Total</span>
@@ -113,7 +122,96 @@ export default function Dashboard() {
           <span>Use <b>"New Screening"</b> to start a new identity/document verification.</span>
         </div>
       </main>
-      <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+      <style>{`
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+        .donut-row {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding: 24px 16px !important;
+          gap: 28px !important;
+          flex-wrap: wrap !important;
+        }
+
+        .donut {
+          width: 140px !important;
+          height: 140px !important;
+          min-width: 140px !important;
+          min-height: 140px !important;
+          max-width: 140px !important;
+          max-height: 140px !important;
+          flex: 0 0 140px !important;
+          flex-shrink: 0 !important;
+          aspect-ratio: 1 / 1 !important;
+          border-radius: 50% !important;
+          position: relative !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          box-sizing: border-box !important;
+        }
+
+        .donut-center {
+          width: 100px !important;
+          height: 100px !important;
+          min-width: 100px !important;
+          min-height: 100px !important;
+          max-width: 100px !important;
+          max-height: 100px !important;
+          flex: 0 0 100px !important;
+          flex-shrink: 0 !important;
+          aspect-ratio: 1 / 1 !important;
+          border-radius: 50% !important;
+          box-sizing: border-box !important;
+        }
+
+        .legend {
+          min-width: 170px;
+        }
+
+        @media (max-width: 640px) {
+          .dashboard-heading {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .date-time {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .dashboard-stats {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .donut-row {
+            flex-direction: column !important;
+            gap: 16px !important;
+            padding: 20px 12px !important;
+          }
+          .legend {
+            width: 100% !important;
+            max-width: 240px !important;
+          }
+          .recent-item {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+          .recent-time {
+            margin-right: 0 !important;
+            order: 3 !important;
+            width: 100% !important;
+            padding-left: 34px !important;
+          }
+          .recent-status {
+            order: 2 !important;
+            margin-left: auto !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

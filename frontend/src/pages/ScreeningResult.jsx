@@ -161,20 +161,43 @@ export default function ScreeningResult() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         {/* Validation findings */}
         <Panel title="AUTOMATED VERIFICATION CHECKS">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '8px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 20px' }}>
             {findings.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F8FAFC', paddingBottom: '10px', fontSize: '13px' }}>
+              <div 
+                key={idx} 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  padding: '11px 16px', 
+                  borderRadius: '8px',
+                  backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF',
+                  border: '1px solid #EEF2F6',
+                  fontSize: '13px' 
+                }}
+              >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-dark)', fontWeight: '500' }}>
                   {item.status ? (
-                    <CheckCircle size={16} color="#10B981" />
+                    <CheckCircle size={16} color="#10B981" style={{ flexShrink: 0 }} />
                   ) : (
-                    <AlertTriangle size={16} color="#EF4444" />
+                    <AlertTriangle size={16} color="#EF4444" style={{ flexShrink: 0 }} />
                   )}
                   {item.name}
                 </span>
-                <strong style={{ color: item.status ? '#047857' : '#B91C1C' }}>
+                <span 
+                  style={{ 
+                    color: item.status ? '#047857' : '#B91C1C',
+                    fontWeight: '600',
+                    background: item.status ? '#ECFDF5' : '#FEF2F2',
+                    border: `1px solid ${item.status ? '#A7F3D0' : '#FECACA'}`,
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {item.val}
-                </strong>
+                </span>
               </div>
             ))}
           </div>
@@ -183,7 +206,7 @@ export default function ScreeningResult() {
         {/* Quick Document Summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <Panel title="DOCUMENT INFORMATION SUMMARY">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 20px', fontSize: '13px' }}>
               {[
                 ["Document Holder", caseData.name || "N/A"],
                 ["Document Type", caseData.docType || "N/A"],
@@ -192,9 +215,21 @@ export default function ScreeningResult() {
                 ["Expiry Date", caseData.details?.expiryDate || "N/A"],
                 ["Nationality", caseData.details?.nationality || "Indian"]
               ].map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>{item[0]}</span>
-                  <strong style={{ color: 'var(--text-dark)', wordBreak: 'break-word', textAlign: 'right' }}>{item[1]}</strong>
+                <div 
+                  key={idx} 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    padding: '11px 16px', 
+                    borderRadius: '8px',
+                    backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF',
+                    border: '1px solid #EEF2F6',
+                    gap: '16px'
+                  }}
+                >
+                  <span style={{ color: 'var(--text-muted)', fontWeight: '500' }}>{item[0]}</span>
+                  <strong style={{ color: 'var(--text-dark)', wordBreak: 'break-word', textAlign: 'right', fontWeight: '600' }}>{item[1]}</strong>
                 </div>
               ))}
             </div>
@@ -202,16 +237,16 @@ export default function ScreeningResult() {
 
           {/* Warnings Log if any */}
           {warnings.length > 0 && (
-            <section className="panel" style={{ border: '1px solid #FEE2E2', background: '#FEF2F2', padding: '20px' }}>
-              <div className="panel-title" style={{ color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #FCA5A5', paddingBottom: '8px', marginBottom: '12px' }}>
+            <section className="panel" style={{ border: '1px solid #FECACA', background: '#FEF2F2', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #FCA5A5', background: '#FEE2E2', fontWeight: '600', fontSize: '13px' }}>
                 <AlertCircle size={18} color="#B91C1C" />
                 <span>Validation Alerts &amp; Flag Details</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 20px' }}>
                 {warnings.map((w, idx) => (
-                  <div key={idx} style={{ fontSize: '12.5px', color: '#991B1B', lineHeight: '1.4', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>•</span>
-                    <span>{w}</span>
+                  <div key={idx} style={{ fontSize: '12.5px', color: '#991B1B', lineHeight: '1.5', display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.75)', borderRadius: '6px', border: '1px solid #FECACA' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#B91C1C', marginTop: '-1px' }}>•</span>
+                    <span style={{ flex: 1 }}>{w}</span>
                   </div>
                 ))}
               </div>
