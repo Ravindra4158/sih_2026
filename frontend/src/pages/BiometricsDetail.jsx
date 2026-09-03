@@ -75,56 +75,58 @@ export default function BiometricsDetail() {
         
         {/* Left Column: Photos Comparison */}
         <Panel title="PORTRAIT MATCHING (SIDE-BY-SIDE)">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px', padding: '16px 0' }}>
-            
-            {/* ID Document Photo */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-              <div style={{ position: 'relative', width: '180px', height: '220px', background: '#E2E8F0', borderRadius: '8px', border: '2px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ScanFace size={80} color="#94A3B8" />
-                <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.75)', color: 'white', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: '600', letterSpacing: '0.05em' }}>
-                  EXTRACTED FROM ID
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px', padding: '8px 0 16px' }}>
+              
+              {/* ID Document Photo */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <div style={{ position: 'relative', width: '180px', height: '220px', background: '#E2E8F0', borderRadius: '8px', border: '2px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ScanFace size={80} color="#94A3B8" />
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.75)', color: 'white', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: '600', letterSpacing: '0.05em' }}>
+                    EXTRACTED FROM ID
+                  </div>
+                  {/* Green bounding box */}
+                  <div style={{ position: 'absolute', border: '2px solid #10B981', top: '35px', bottom: '35px', left: '30px', right: '30px', borderRadius: '4px', boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)' }} />
                 </div>
-                {/* Green bounding box */}
-                <div style={{ position: 'absolute', border: '2px solid #10B981', top: '35px', bottom: '35px', left: '30px', right: '30px', borderRadius: '4px', boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)' }} />
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Credential Photograph</span>
               </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Credential Photograph</span>
-            </div>
 
-            {/* Live Capture */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-              <div style={{ position: 'relative', width: '180px', height: '220px', background: '#E2E8F0', borderRadius: '8px', border: '2px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ScanFace size={80} color="#64748B" />
-                <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.75)', color: 'white', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: '600', letterSpacing: '0.05em' }}>
-                  LIVE STREAM CAPTURE
+              {/* Live Capture */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <div style={{ position: 'relative', width: '180px', height: '220px', background: '#E2E8F0', borderRadius: '8px', border: '2px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ScanFace size={80} color="#64748B" />
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.75)', color: 'white', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: '600', letterSpacing: '0.05em' }}>
+                    LIVE STREAM CAPTURE
+                  </div>
+                  {/* Face mesh simulation overlay */}
+                  <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                    <path d="M 90,50 L 70,100 L 90,140 L 110,100 Z" fill="none" stroke="#3B82F6" strokeWidth="1" strokeDasharray="3" />
+                    <circle cx="70" cy="100" r="3" fill="#3B82F6" />
+                    <circle cx="110" cy="100" r="3" fill="#3B82F6" />
+                    <circle cx="90" cy="140" r="3" fill="#3B82F6" />
+                    <circle cx="90" cy="50" r="3" fill="#3B82F6" />
+                  </svg>
+                  <div style={{ position: 'absolute', border: `2px solid ${isMatch ? '#10B981' : '#EF4444'}`, top: '35px', bottom: '35px', left: '30px', right: '30px', borderRadius: '4px' }} />
                 </div>
-                {/* Face mesh simulation overlay */}
-                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                  <path d="M 90,50 L 70,100 L 90,140 L 110,100 Z" fill="none" stroke="#3B82F6" strokeWidth="1" strokeDasharray="3" />
-                  <circle cx="70" cy="100" r="3" fill="#3B82F6" />
-                  <circle cx="110" cy="100" r="3" fill="#3B82F6" />
-                  <circle cx="90" cy="140" r="3" fill="#3B82F6" />
-                  <circle cx="90" cy="50" r="3" fill="#3B82F6" />
-                </svg>
-                <div style={{ position: 'absolute', border: `2px solid ${isMatch ? '#10B981' : '#EF4444'}`, top: '35px', bottom: '35px', left: '30px', right: '30px', borderRadius: '4px' }} />
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Live Verification Camera</span>
               </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>Live Verification Camera</span>
+
             </div>
 
-          </div>
-
-          {/* Match Score Display */}
-          <div style={{ display: 'flex', background: '#F8FAFC', borderRadius: '8px', padding: '16px', border: '1px solid var(--border)', marginTop: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.05em' }}>VERIFICATION SIMILARITY</span>
-              <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-dark)', marginTop: '4px' }}>
-                {isMatch ? "Confidence Score: MATCH" : "Confidence Score: MISMATCH ALERT"}
-              </strong>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-              <span style={{ fontSize: '32px', fontWeight: '800', color: isMatch ? '#10B981' : '#EF4444' }}>
-                {bio.faceMatchScore}%
-              </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>(Threshold: 80%)</span>
+            {/* Match Score Display */}
+            <div style={{ display: 'flex', background: '#F8FAFC', borderRadius: '8px', padding: '16px 20px', border: '1px solid var(--border)', marginTop: '8px', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+              <div>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.05em' }}>VERIFICATION SIMILARITY</span>
+                <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-dark)', marginTop: '4px' }}>
+                  {isMatch ? "Confidence Score: MATCH" : "Confidence Score: MISMATCH ALERT"}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                <span style={{ fontSize: '32px', fontWeight: '800', color: isMatch ? '#10B981' : '#EF4444' }}>
+                  {bio.faceMatchScore}%
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>(Threshold: 80%)</span>
+              </div>
             </div>
           </div>
         </Panel>
@@ -133,42 +135,48 @@ export default function BiometricsDetail() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Liveness signals checklist */}
           <Panel title="ANTI-SPOOFING LIVENESS AUDIT">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-dark)', fontWeight: '500' }}>
                   {hasBlink ? <CheckCircle size={16} color="#10B981" /> : <AlertTriangle size={16} color="#F59E0B" />}
                   Eye Blink Sensor (EAR Dip)
                 </span>
-                <strong style={{ fontSize: '13px' }}>{hasBlink ? "Detected" : "Not Found"}</strong>
+                <span style={{ fontSize: '12px', fontWeight: '600', padding: '3px 10px', borderRadius: '6px', background: hasBlink ? '#ECFDF5' : '#FEF3C7', color: hasBlink ? '#047857' : '#B45309', border: `1px solid ${hasBlink ? '#A7F3D0' : '#FDE68A'}` }}>
+                  {hasBlink ? "Detected" : "Not Found"}
+                </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-dark)', fontWeight: '500' }}>
                   <CheckCircle size={16} color="#10B981" />
                   3D Depth/Texture Check (PAD)
                 </span>
-                <strong style={{ fontSize: '13px' }}>Passed (Score: {bio.livenessCheck.padScore})</strong>
+                <span style={{ fontSize: '12px', fontWeight: '600', padding: '3px 10px', borderRadius: '6px', background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0' }}>
+                  Passed ({bio.livenessCheck.padScore})
+                </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-dark)', fontWeight: '500' }}>
                   <CheckCircle size={16} color="#10B981" />
                   Print/Replay Attack Signature
                 </span>
-                <strong style={{ fontSize: '13px' }}>Clear (No screen detected)</strong>
+                <span style={{ fontSize: '12px', fontWeight: '600', padding: '3px 10px', borderRadius: '6px', background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0' }}>
+                  Clear (No screen)
+                </span>
               </div>
             </div>
           </Panel>
 
           {/* EAR curve telemetry line chart */}
           <Panel title="EYE ASPECT RATIO (EAR) GRAPH">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '8px 0' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 20px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 Real-time EAR metrics. A distinct dip indicates voluntary blink event.
               </span>
               
               {/* SVG Line Graph */}
-              <div style={{ background: '#0F172A', borderRadius: '8px', padding: '8px', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ background: '#0F172A', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'center' }}>
                 <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height}>
                   {/* Grid Lines */}
                   <line x1={padding} y1={height/2} x2={width-padding} y2={height/2} stroke="#334155" strokeDasharray="3" />
@@ -202,9 +210,9 @@ export default function BiometricsDetail() {
               </div>
 
               {/* Min EAR indicator */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #EEF2F6', fontSize: '12px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Minimum Aspect Ratio achieved:</span>
-                <strong>{bio.livenessCheck.minimumEar} (Threshold: 0.20)</strong>
+                <strong style={{ color: 'var(--text-dark)' }}>{bio.livenessCheck.minimumEar} (Threshold: 0.20)</strong>
               </div>
             </div>
           </Panel>

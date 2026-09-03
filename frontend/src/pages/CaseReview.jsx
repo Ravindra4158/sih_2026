@@ -71,7 +71,7 @@ export default function CaseReview() {
         {/* Left Side: Decision Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <Panel title="OFFICER REVIEW LOG &amp; DECISION">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 20px' }}>
               <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-dark)' }}>
                 Review Notes &amp; Rationale (Required for Override)
               </label>
@@ -133,22 +133,22 @@ export default function CaseReview() {
 
           {/* Quick Case Identifiers */}
           <Panel title="CANDIDATE DOSSIER INFO">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', fontSize: '13px', padding: '8px 0' }}>
-              <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Name:</span>
-                <strong>{caseData.name}</strong>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', fontSize: '13px', padding: '16px 20px' }}>
+              <div style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px', fontSize: '12px' }}>Name:</span>
+                <strong style={{ color: 'var(--text-dark)' }}>{caseData.name}</strong>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Document Type:</span>
-                <strong>{caseData.docType}</strong>
+              <div style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px', fontSize: '12px' }}>Document Type:</span>
+                <strong style={{ color: 'var(--text-dark)' }}>{caseData.docType}</strong>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Identifier ID:</span>
-                <strong>{caseData.docNo}</strong>
+              <div style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px', fontSize: '12px' }}>Identifier ID:</span>
+                <strong style={{ color: 'var(--text-dark)' }}>{caseData.docNo}</strong>
               </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Assigned Checkpoint:</span>
-                <strong>Terminal 3, Alpha</strong>
+              <div style={{ padding: '10px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #EEF2F6' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '2px', fontSize: '12px' }}>Assigned Checkpoint:</span>
+                <strong style={{ color: 'var(--text-dark)' }}>Terminal 3, Alpha</strong>
               </div>
             </div>
           </Panel>
