@@ -6,6 +6,21 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    // Keep the same /api/v1 URL locally that VerifyDoc uses in production.
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/swagger": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/openapi.json": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
   }
 });

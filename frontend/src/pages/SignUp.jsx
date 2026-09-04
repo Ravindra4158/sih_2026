@@ -23,7 +23,7 @@ export default function SignUp() {
     <div className="auth-box">
       <div className="auth-box-header">
         <h2>Officer Registration</h2>
-        <p>Register official credentials for Border Screening Access</p>
+        <p>Register official credentials for VerifyDoc access</p>
       </div>
 
       <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

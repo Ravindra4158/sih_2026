@@ -1,4 +1,4 @@
-# AI Border Screening
+# VerifyDoc - AI-Based Fake Identity & Document Screening System
 
 An officer-assist prototype for screening identity-document images. It combines OCR, image-quality checks, machine-readable-code checks, Error Level Analysis (ELA), optional face comparison, and a rule-based risk summary. The React dashboard lets an officer review and manage cases.
 
@@ -95,7 +95,7 @@ npm install
 npm run dev
 ```
 
-Open the URL printed by Vite (normally `http://localhost:5173`). The frontend defaults to `http://localhost:8000/api/v1`; set `VITE_API_BASE_URL` before starting Vite to use another API location.
+Open the URL printed by Vite (normally `http://localhost:5173`). The frontend defaults to same-origin `/api/v1`; Vite proxies this to the local backend. Set `VITE_API_BASE_URL` only when the API is hosted on another origin.
 
 Interactive API documentation is available at `http://localhost:8000/swagger`.
 
@@ -104,8 +104,8 @@ Interactive API documentation is available at `http://localhost:8000/swagger`.
 | Variable | Default | Used by |
 | --- | --- | --- |
 | `MONGODB_URI` | `mongodb://localhost:27017` fallback | MongoDB connection for sessions and cases |
-| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | Frontend API base URL |
-| `APP_NAME` | `AI-Based Fake Identity & Document Screening System` | Settings object |
+| `VITE_API_BASE_URL` | `/api/v1` | Frontend API base URL |
+| `APP_NAME` | `VerifyDoc - AI-Based Fake Identity & Document Screening System` | Settings object |
 | `ENVIRONMENT` | `development` | Settings object |
 | `LOG_LEVEL` | `INFO` | Settings object |
 | `API_PREFIX` | `/api/v1` | Settings object; routes currently use `/api/v1` directly in `main.py` |

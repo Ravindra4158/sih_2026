@@ -24,7 +24,7 @@ export function Header({ title, subtitle, caseNo }) {
   return (
     <header className="topbar">
       <div>
-        <h1>BORDER SCREENING SYSTEM</h1>
+        <h1>VERIFYDOC</h1>
         <p>AI-Based Fake Identity &amp; Document Screening System</p>
       </div>
       <div className="topbar-right">

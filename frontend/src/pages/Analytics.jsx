@@ -111,7 +111,7 @@ export default function Analytics() {
         <div>
           <span className="eyebrow" style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.1em' }}>INSIGHTS &amp; REPORTS</span>
           <h2 style={{ margin: '8px 0 4px' }}>Analytics</h2>
-          <p>Performance trends across the border screening operation.</p>
+          <p>Performance trends across the VerifyDoc screening operation.</p>
         </div>
         <button onClick={handleDownloadReport} className="btn-primary" style={{ background: 'white', color: 'var(--primary)', border: '1px solid var(--border)' }}>
           <Download size={16} /> Download Report

@@ -101,7 +101,7 @@ export default function ScreeningPipeline() {
         selfiePreview = null,
       } = payload;
 
-      log(`Initialising border screening pipeline...`);
+      log(`Initialising VerifyDoc screening pipeline...`);
       log(`Case ID assigned: ${id}`, "SYS");
       log(`Document type declared: ${docType}`, "SYS");
       log(`Documents submitted: ${docPreviews.length}  |  Selfie: ${selfiePreview ? "YES" : "NO"}`, "SYS");

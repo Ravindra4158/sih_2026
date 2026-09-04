@@ -1,11 +1,11 @@
 /**
- * api.js – Centralised API client for the AI Border Screening backend.
+ * api.js – Centralised API client for the VerifyDoc backend.
  *
- * Base URL: http://localhost:8000/api/v1  (overridable via VITE_API_BASE_URL)
+ * Base URL: /api/v1 (same-origin in production; overridable via VITE_API_BASE_URL)
  */
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
 // ---------------------------------------------------------------------------
 // Helper: JSON fetch wrapper

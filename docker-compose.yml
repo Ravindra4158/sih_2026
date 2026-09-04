@@ -2,23 +2,31 @@ services:
   backend:
     build:
       context: .
-      dockerfile: deployment/Dockerfile.backend
+      dockerfile: Dockerfile
     ports: ["8000:8000"]
     environment:
-      DATABASE_URL: postgresql+psycopg://screening:screening@database:5432/screening
-    depends_on: [database]
+      MONGODB_URI: mongodb://database:27017
+    depends_on:
+      database:
+        condition: service_healthy
   frontend:
     build:
       context: .
       dockerfile: deployment/Dockerfile.frontend
-    ports: ["5173:5173"]
-    depends_on: [backend]
+    ports: ["${VERIFYDOC_HTTP_PORT:-80}:80"]
+    depends_on:
+      backend:
+        condition: service_healthy
   database:
-    image: postgres:16-alpine
+    image: mongo:7
     environment:
-      POSTGRES_DB: screening
-      POSTGRES_USER: screening
-      POSTGRES_PASSWORD: screening
-    volumes: ["postgres_data:/var/lib/postgresql/data"]
+      MONGO_INITDB_DATABASE: border_screening
+    volumes: ["mongodb_data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 volumes:
-  postgres_data:
+  mongodb_data:

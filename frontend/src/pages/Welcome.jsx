@@ -1,20 +1,32 @@
-import { useEffect } from "react";
-import { Shield, ShieldCheck, Activity, Zap, ArrowRight } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Shield, ShieldCheck, Activity, Zap } from "lucide-react";
+import idCardImg from "../assets/id_card.png";
+import passportImg from "../assets/passport_document.png";
 
 export default function Welcome() {
+  const [isExiting, setIsExiting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const redirectTimer = window.setTimeout(() => {
-      navigate("/login", { replace: true });
-    }, 1000);
+    // Show landing page for exactly 2.8 seconds, then initiate smooth transition to login
+    const exitTimer = setTimeout(() => {
+      setIsExiting(true);
+    }, 2800);
 
-    return () => window.clearTimeout(redirectTimer);
+    // After 400ms transition completes, navigate to /login
+    const navTimer = setTimeout(() => {
+      navigate("/login");
+    }, 3200);
+
+    return () => {
+      clearTimeout(exitTimer);
+      clearTimeout(navTimer);
+    };
   }, [navigate]);
 
   return (
-    <div className="welcome-container">
+    <div className={`welcome-container ${isExiting ? "welcome-exiting" : "welcome-entering"}`}>
       <div className="welcome-left">
         <div className="welcome-content">
           <div className="welcome-header">
@@ -48,10 +60,6 @@ export default function Welcome() {
               <span>Faster &amp; Smarter Decisions</span>
             </div>
           </div>
-
-          <Link to="/login" className="btn-get-started">
-            GET STARTED <ArrowRight size={16} />
-          </Link>
         </div>
         
         <div className="welcome-footer-bar">
@@ -60,30 +68,47 @@ export default function Welcome() {
       </div>
       
       <div className="welcome-right">
-        {/* Placeholder for the AI/Network background graphic */}
-        <div className="ai-graphic">
-          <div className="id-card-overlay">
-            <div className="id-card-header">IDENTITY CARD</div>
-            <div className="id-card-body">
-              <div className="id-avatar"></div>
-              <div className="id-lines">
-                <div className="id-line"></div>
-                <div className="id-line"></div>
-                <div className="id-line"></div>
-                <div className="id-line short"></div>
-              </div>
-            </div>
-            <div className="id-card-footer">
-              <div className="id-line long"></div>
-              <div className="id-status-badge">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="status-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
-            </div>
+        <div className="welcome-brand-showcase">
+          <div className="brand-doc-wrapper brand-doc-id">
+            <img 
+              src={idCardImg} 
+              alt="Government Identity Card" 
+              className="brand-doc-img id-card-img" 
+            />
+          </div>
+          <div className="brand-doc-wrapper brand-doc-passport">
+            <img 
+              src={passportImg} 
+              alt="International Passport Document" 
+              className="brand-doc-img passport-img" 
+            />
           </div>
         </div>
       </div>
 
       <style>{`
+        @keyframes welcomeFadeIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.992);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes welcomeFadeOut {
+          0% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0.985);
+          }
+        }
+
         .welcome-container {
           display: flex;
           min-height: 100vh;
@@ -91,14 +116,24 @@ export default function Welcome() {
           overflow-x: hidden;
           background: var(--white);
           position: relative;
+          will-change: opacity, transform;
+        }
+
+        .welcome-container.welcome-entering {
+          animation: welcomeFadeIn 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .welcome-container.welcome-exiting {
+          animation: welcomeFadeOut 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          pointer-events: none;
         }
 
         .welcome-left {
-          flex: 1.15;
+          flex: 1;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          padding: 2.5rem clamp(2rem, 4vw, 4rem) 4.5rem clamp(2rem, 4vw, 4rem) !important;
+          padding: 2.5rem clamp(2rem, 3.5vw, 4rem) 4.5rem clamp(2rem, 3.5vw, 4rem) !important;
           position: relative;
           z-index: 2;
           background: var(--white);
@@ -134,15 +169,6 @@ export default function Welcome() {
           margin-bottom: 1.5rem !important;
         }
 
-        .btn-get-started {
-          padding: 12px 28px !important;
-          font-size: 14px !important;
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 0.5rem;
-        }
-
         .welcome-footer-bar {
           position: absolute !important;
           bottom: 0 !important;
@@ -159,15 +185,15 @@ export default function Welcome() {
         }
 
         .welcome-right {
-          flex: 1 !important;
+          flex: 1.25 !important;
           background: linear-gradient(135deg, #091a3b 0%, #030a1c 100%) !important;
           position: relative !important;
           bottom: auto !important;
           height: auto !important;
           min-height: 100vh !important;
-          margin-left: -7% !important;
-          padding-left: clamp(2.5rem, 6vw, 6.5rem) !important;
-          padding-right: 2rem !important;
+          margin-left: -6% !important;
+          padding-left: clamp(2rem, 3.5vw, 4.5rem) !important;
+          padding-right: clamp(2rem, 3.5vw, 4.5rem) !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -175,20 +201,56 @@ export default function Welcome() {
           box-sizing: border-box;
         }
 
-        .ai-graphic {
+        .welcome-brand-showcase {
           position: relative;
           z-index: 2;
           display: flex;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
+          gap: clamp(1.25rem, 2.5vw, 2.75rem);
           width: 100%;
+          max-width: clamp(560px, 52vw, 840px);
+          margin: 0 auto;
+          box-sizing: border-box;
+          flex-wrap: nowrap;
         }
 
-        .id-card-overlay {
-          width: 320px !important;
-          max-width: 100% !important;
-          margin: 0 auto !important;
-          box-sizing: border-box;
+        .brand-doc-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+          flex-shrink: 0;
+        }
+
+        .brand-doc-wrapper:hover {
+          transform: translateY(-5px);
+        }
+
+        .brand-doc-img {
+          display: block;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+          image-rendering: -webkit-optimize-contrast;
+          filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 24px rgba(20, 75, 168, 0.35));
+          border-radius: 8px;
+          transition: filter 0.3s ease, transform 0.3s ease;
+        }
+
+        .brand-doc-wrapper:hover .brand-doc-img {
+          filter: drop-shadow(0 26px 50px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 32px rgba(34, 197, 94, 0.35));
+        }
+
+        .brand-doc-id .brand-doc-img {
+          max-height: clamp(190px, 28vh, 270px);
+          max-width: clamp(270px, 32vw, 430px);
+        }
+
+        .brand-doc-passport .brand-doc-img {
+          max-height: clamp(270px, 42vh, 390px);
+          max-width: clamp(140px, 18vw, 210px);
         }
 
         /* Short laptop screen height adjustments (<= 750px height) */
@@ -207,6 +269,14 @@ export default function Welcome() {
           .welcome-features {
             gap: 0.5rem !important;
             margin-bottom: 1.25rem !important;
+          }
+          .brand-doc-id .brand-doc-img {
+            max-height: 200px !important;
+            max-width: 325px !important;
+          }
+          .brand-doc-passport .brand-doc-img {
+            max-height: 280px !important;
+            max-width: 150px !important;
           }
         }
 
@@ -248,27 +318,54 @@ export default function Welcome() {
             position: relative !important;
             bottom: auto !important;
             margin-left: 0 !important;
-            padding: 2rem 1.5rem 3rem 1.5rem !important;
-            min-height: unset !important;
+            padding: 2.5rem clamp(1.5rem, 4vw, 3rem) 3.5rem clamp(1.5rem, 4vw, 3rem) !important;
+            min-height: 320px !important;
             height: auto !important;
             width: 100% !important;
             flex: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
-          .id-card-overlay {
-            width: 290px !important;
-            max-width: 100% !important;
+          .welcome-brand-showcase {
+            justify-content: center !important;
             margin: 0 auto !important;
-            padding: 18px !important;
+            gap: 1.5rem !important;
+            max-width: 620px !important;
+          }
+          .brand-doc-id .brand-doc-img {
+            max-height: 180px !important;
+            max-width: 290px !important;
+          }
+          .brand-doc-passport .brand-doc-img {
+            max-height: 260px !important;
+            max-width: 130px !important;
           }
         }
 
+        /* Mobile Breakpoint (<= 480px width) */
         @media (max-width: 480px) {
-          .btn-get-started {
-            width: 100% !important;
-            justify-content: center;
+          .welcome-right {
+            padding: 1.75rem 0.75rem 2.5rem 0.75rem !important;
+            justify-content: center !important;
+          }
+          .welcome-brand-showcase {
+            justify-content: center !important;
+            margin: 0 auto !important;
+            gap: 0.75rem !important;
+            max-width: 100% !important;
+          }
+          .brand-doc-id .brand-doc-img {
+            max-height: 120px !important;
+            max-width: 54vw !important;
+          }
+          .brand-doc-passport .brand-doc-img {
+            max-height: 175px !important;
+            max-width: 32vw !important;
           }
         }
       `}</style>
     </div>
   );
 }
+
