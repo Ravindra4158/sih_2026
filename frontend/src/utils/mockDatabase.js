@@ -251,6 +251,29 @@ const INITIAL_CASES = [
   }
 ];
 
+const DEMO_CASES = [
+  ...INITIAL_CASES,
+  ...Array.from({ length: 582 }, (_, index) => {
+    const template = INITIAL_CASES[index % INITIAL_CASES.length];
+    const sequence = index + 1;
+    const day = (index % 31) + 1;
+    const hour = 8 + (index % 10);
+    const minute = (index * 7) % 60;
+    const status = index % 3 === 0 ? "Approved" : index % 3 === 1 ? "Pending" : "Rejected";
+    const riskLevel = status === "Approved" ? "Low" : status === "Pending" ? "Medium" : "High";
+
+    return {
+      ...template,
+      id: `BR-2026-TEST-${String(sequence).padStart(4, "0")}`,
+      date: `${day} Aug 2026, ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`,
+      name: `Test Candidate ${String(sequence).padStart(3, "0")}`,
+      riskLevel,
+      status,
+      reviewNotes: "Generated August test record.",
+    };
+  }),
+];
+
 export const mockDatabase = {
   initialize() {
     let cases = [];
@@ -262,7 +285,7 @@ export const mockDatabase = {
 
     let updated = false;
     // Self-healing merge to guarantee default cases always exist
-    INITIAL_CASES.forEach(defCase => {
+    DEMO_CASES.forEach(defCase => {
       if (!cases.some(c => c.id === defCase.id)) {
         cases.push(defCase);
         updated = true;
@@ -279,7 +302,7 @@ export const mockDatabase = {
     try {
       return JSON.parse(localStorage.getItem("ai_border_cases"));
     } catch {
-      return INITIAL_CASES;
+      return DEMO_CASES;
     }
   },
 

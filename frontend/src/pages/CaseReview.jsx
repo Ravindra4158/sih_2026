@@ -11,9 +11,15 @@ export default function CaseReview() {
   const { caseData, loading } = useCaseData(id);
   const [notes, setNotes] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [currentStatus, setCurrentStatus] = useState("Pending");
+  const [currentRisk, setCurrentRisk] = useState("Medium");
 
   useEffect(() => {
-    if (caseData) setNotes(caseData.reviewNotes || "");
+    if (caseData) {
+      setNotes(caseData.reviewNotes || "");
+      setCurrentStatus(caseData.status || "Pending");
+      setCurrentRisk(caseData.riskLevel || "Medium");
+    }
   }, [caseData]);
 
   if (!caseData) {
@@ -41,6 +47,8 @@ export default function CaseReview() {
         localStorage.setItem("ai_border_cases", JSON.stringify(local));
       } catch {}
     }
+    setCurrentStatus(newStatus);
+    setCurrentRisk(newRisk);
     setSuccessMsg(`Decision logged! Status set to ${newStatus.toUpperCase()}.`);
     setTimeout(() => navigate("/dashboard/history"), 1500);
   };
@@ -92,6 +100,13 @@ export default function CaseReview() {
                   color: 'var(--text-dark)'
                 }}
               />
+
+              <div style={{ padding: '12px 14px', borderRadius: '8px', background: currentStatus === 'Approved' ? '#ECFDF5' : currentStatus === 'Rejected' ? '#FEF2F2' : '#FFFBEB', border: `1px solid ${currentStatus === 'Approved' ? '#A7F3D0' : currentStatus === 'Rejected' ? '#FECACA' : '#FDE68A'}` }}>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '4px' }}>CURRENT DECISION</span>
+                <strong style={{ color: currentStatus === 'Approved' ? '#047857' : currentStatus === 'Rejected' ? '#B91C1C' : '#B45309' }}>
+                  {currentStatus} · {currentRisk} Risk
+                </strong>
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                 <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)' }}>SELECT FINAL ACTION RESOLUTION:</span>

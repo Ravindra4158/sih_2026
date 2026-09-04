@@ -11,6 +11,8 @@ import {
    Bell, 
    Settings, 
    LogOut,
+  Menu,
+  X,
    ShieldCheck,
    User as UserIcon,
    Calendar
@@ -62,12 +64,19 @@ export default function DashboardLayout() {
   const location = useLocation();
   const { logout, user } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isHistoryResult = location.pathname.startsWith("/screening/") &&
+    new URLSearchParams(location.search).get("from") === "history";
 
   useEffect(() => {
     mockDatabase.initialize();
     const list = mockDatabase.getAllCases();
     const pending = list.filter(c => c.status === "Pending").length;
     setPendingCount(pending);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
   }, [location.pathname]);
   
   const navItems = [
@@ -82,7 +91,17 @@ export default function DashboardLayout() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
+      <button
+        className="mobile-menu-toggle"
+        type="button"
+        aria-label={isSidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={isSidebarOpen}
+        onClick={() => setIsSidebarOpen((open) => !open)}
+      >
+        {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
+      </button>
+      {isSidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Close navigation menu" onClick={() => setIsSidebarOpen(false)} />}
+      <aside className={`sidebar${isSidebarOpen ? " sidebar-open" : ""}`}>
         <div className="sidebar-brand">
           <ShieldCheck size={28} />
           <span>Officer Panel</span>
@@ -91,7 +110,8 @@ export default function DashboardLayout() {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || 
               (location.pathname === "/dashboard" && item.path === "/dashboard") ||
-              (item.path === "/dashboard/screening" && location.pathname.startsWith("/screening")) ||
+              (item.path === "/dashboard/history" && isHistoryResult) ||
+              (item.path === "/dashboard/screening" && location.pathname.startsWith("/screening") && !isHistoryResult) ||
               (item.path === "/dashboard/pending" && location.pathname.startsWith("/cases"));
 
             return (
@@ -99,6 +119,7 @@ export default function DashboardLayout() {
                 key={item.name} 
                 to={item.path} 
                 className={isActive ? "active" : ""}
+                onClick={() => setIsSidebarOpen(false)}
               >
                 <item.icon size={18} />
                 <span>{item.name}</span>
@@ -106,7 +127,7 @@ export default function DashboardLayout() {
               </Link>
             );
           })}
-          <button className="logout" onClick={logout}>
+          <button className="logout" onClick={() => { setIsSidebarOpen(false); logout(); }}>
             <LogOut size={18} />
             <span>Logout</span>
           </button>

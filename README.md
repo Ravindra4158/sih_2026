@@ -1,84 +1,92 @@
-# AI-Based Fake Identity & Document Screening System
+# AI Border Screening
 
-A modular hackathon MVP scaffold for reviewing identity documents. It is designed to grow into a production-grade system without claiming unimplemented integrations or verification capabilities.
+An officer-assist prototype for screening identity-document images. It combines OCR, image-quality checks, machine-readable-code checks, Error Level Analysis (ELA), optional face comparison, and a rule-based risk summary. The React dashboard lets an officer review and manage cases.
 
-## Current working flow
+This is a demo/prototype for synthetic or otherwise legally authorised material. Its outputs are screening signals, not proof that a document is genuine or that a person’s identity has been verified.
+
+## What is implemented
+
+- Upload JPEG, PNG, or PDF documents. PDFs are rendered from their first page before image processing.
+- EasyOCR-based text extraction, document-type heuristics, and field extraction for Aadhaar, PAN, and passport/MRZ-style documents; other inputs are treated as general IDs.
+- Image-quality measurements for blur and glare.
+- ICAO MRZ checksum validation.
+- QR-code and barcode extraction, Aadhaar QR decoding where supported, and OCR-to-QR cross-reference signals.
+- Template-style layout checks for Aadhaar, PAN, and passport documents.
+- ELA heatmaps, anomaly regions, and EXIF editing-software flags as tampering indicators.
+- Document-portrait detection with OpenCV, face comparison using DeepFace when available, and a simple EAR-series blink check.
+- Session-based aggregation into low, medium, or high risk. The orchestration endpoint always returns `final_action: "Pending"`; an officer must make any approval or rejection decision.
+- MongoDB-backed case CRUD, including four seeded demonstration cases when the `cases` collection is empty.
+
+## Important limitations
+
+- OCR, type detection, layout checks, ELA, liveness, and facial similarity are heuristic/prototype components. They are not calibrated fraud probabilities and can produce false positives and false negatives.
+- ELA identifies unusual recompression differences; it does not establish that a document has been altered. It is especially limited for PNG images.
+- Blink liveness is derived only from the EAR values supplied by the client. It is not a complete presentation-attack-detection solution.
+- DeepFace may download or initialise model assets on first use. If DeepFace is unavailable, the current backend falls back to a heuristic result and marks it with `BIOMETRICS_HEURISTIC_MODE`.
+- There is no authentication, authorization, rate limiting, malware scanning, encrypted-at-rest document storage, government/watchlist integration, or audit-grade retention policy.
+- OCR results and uploaded document images are written to the session store, and cases can contain base64 document/live images. Do not use real personal or biometric data without an appropriate legal, security, and retention design.
+
+## Architecture
 
 ```text
-React/Vite upload form → `POST /api/v1/verification/documents/verify` → upload validation → preprocessing → OCR → rule-based type detection → field extraction → structural validation → available model adapters → risk assessment → explainable JSON result
+React/Vite dashboard
+        |
+        v
+FastAPI API (`/api/v1`)
+        |
+        +-- Document OCR / quality / layout / MRZ / QR checks
+        +-- ELA forensics
+        +-- Face match and EAR-based blink signal
+        +-- Risk orchestration (officer decision remains pending)
+        |
+        v
+MongoDB (`border_screening` database): sessions and cases
 ```
 
-The implementation accepts a single PDF, JPEG, or PNG document (10 MB maximum by default), validates its metadata and signature, uses short-lived temporary storage, then returns available extracted fields. Documents are not retained. It supports Aadhaar, passport, PAN, driving licence, and `unknown` classification. Type detection is currently rule-based—not an AI model.
+## Repository layout
 
-## Processing pipeline
+- `frontend/` — React and Vite officer dashboard.
+- `backend/app/` — FastAPI routes, services, Pydantic models, MongoDB access, and utilities.
+- `ml/` — preprocessing, training, and evaluation scripts/notes.
+- `scripts/` — dataset and pipeline utility scripts.
+- `docs/` — design, security, API, research, and hackathon notes. Some documents describe earlier iterations; the source routes below and Swagger are the current API reference.
 
-```text
-Document
-   ↓
-File validation
-   ↓
-PDF rendering / image normalization
-   ↓
-Tesseract OCR
-   ↓
-Rule-based document type detection
-   ↓
-Document-specific field extraction
-   ↓
-Structural validation signals
-   ↓
-Future authenticity, biometric, and risk stages
+## Prerequisites
+
+- Python 3.11 or later.
+- Node.js and npm for the frontend.
+- MongoDB reachable at `MONGODB_URI`, or a local MongoDB instance at `mongodb://localhost:27017`.
+- System packages required by the OCR/barcode stack: Tesseract, ZBar, and OpenCV runtime libraries. On Debian/Ubuntu:
+
+```bash
+sudo apt-get install tesseract-ocr libzbar0 libgl1 libglib2.0-0
 ```
 
-## Current MVP scope
+The backend requirements include DeepFace, TensorFlow/Keras, EasyOCR, PyTorch-dependent components, and MongoDB drivers. Installation can therefore be sizeable.
 
-Tesseract OCR, PyMuPDF PDF rendering, rule-based classification, field extraction, format/date validation, Python-ELA inspection, optional MRZ Reader integration, optional DeepFace face comparison, deterministic risk scoring, metadata-only history, and JSON reports are implemented. MRZ Reader and DeepFace require their optional runtimes/weights. Results are screening evidence, not authenticity proof.
+## Run locally
 
-## Layout
-
-- `frontend/` — React/Vite officer dashboard placeholders.
-- `backend/` — FastAPI API, domain modules, and future persistence/integration boundaries.
-- `ml/` — dataset guidance, preprocessing, training, and evaluation placeholders.
-- `data/` — synthetic and legally obtained sample-data locations only.
-
-Never add real Aadhaar, passports, biometric samples, credentials, or other personal data. Use only synthetic or legally obtained data.
-
-## Project layout
-
-- `frontend/` — React/Vite upload interface and API client.
-- `backend/app/api/routes/` — FastAPI HTTP endpoints.
-- `backend/app/services/document_service.py` — upload validation and temporary-file lifecycle.
-- `backend/app/services/document_processing_service.py` — orchestration only; stages remain independent.
-- `backend/app/modules/ocr/` — preprocessing, swappable OCR adapter, and document-specific extraction.
-- `backend/app/modules/document_classifier.py` — replaceable, initial rule-based classifier.
-- `backend/app/modules/validation/` — non-authenticity structural validation signals.
-- `tests/` — unit and integration tests using only mock/synthetic file data.
-- `ml/` — dataset guidance, preprocessing, training, and evaluation placeholders.
-
-## Configuration
-
-The backend reads environment variables (or a root `.env` file). Defaults are safe for local development:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `API_PREFIX` | `/api/v1` | API route prefix |
-| `MAX_UPLOAD_SIZE_BYTES` | `10485760` | Maximum accepted upload size |
-| `UPLOAD_TEMP_DIR` | `/tmp/ai-border-screening-uploads` | Short-lived upload workspace |
-| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Permitted frontend origins |
-| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | Frontend backend URL |
-
-Do not put credentials or real identity documents in `.env`, source control, or test fixtures.
-
-## Start development
+Create a virtual environment and install the full backend requirement set:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev]'
-uvicorn app.main:app --app-dir backend --reload
+pip install -r requirements.txt
 ```
 
-In a second terminal:
+Set a MongoDB connection string if the database is not running locally:
+
+```bash
+export MONGODB_URI='mongodb://localhost:27017'
+```
+
+Start the API from the repository root:
+
+```bash
+uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+In another terminal, start the dashboard:
 
 ```bash
 cd frontend
@@ -86,54 +94,63 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (normally `http://localhost:5173`). The frontend uploads to `http://localhost:8000/api/v1` unless `VITE_API_BASE_URL` is set.
+Open the URL printed by Vite (normally `http://localhost:5173`). The frontend defaults to `http://localhost:8000/api/v1`; set `VITE_API_BASE_URL` before starting Vite to use another API location.
 
-## API
+Interactive API documentation is available at `http://localhost:8000/swagger`.
 
-`POST /api/v1/documents/upload` accepts multipart form data with a `file` field.
+### Configuration
 
-```bash
-curl -F 'file=@path/to/synthetic-id.png;type=image/png' \
-  http://localhost:8000/api/v1/documents/upload
-```
+| Variable | Default | Used by |
+| --- | --- | --- |
+| `MONGODB_URI` | `mongodb://localhost:27017` fallback | MongoDB connection for sessions and cases |
+| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | Frontend API base URL |
+| `APP_NAME` | `AI-Based Fake Identity & Document Screening System` | Settings object |
+| `ENVIRONMENT` | `development` | Settings object |
+| `LOG_LEVEL` | `INFO` | Settings object |
+| `API_PREFIX` | `/api/v1` | Settings object; routes currently use `/api/v1` directly in `main.py` |
+| `MAX_UPLOAD_SIZE_BYTES` | `10485760` | Settings object; upload routes currently validate type/signature but do not enforce this value |
+| `UPLOAD_TEMP_DIR` | `/tmp/ai-border-screening-uploads` | Settings object; routes currently use the system temporary directory |
 
-It returns `201 Created` with `document_id`, sanitized `filename`, and `status: "uploaded"`. See [the API specification](docs/api/api-specification.md) for error responses.
+`backend/app/database/mongodb.py` loads `MONGODB_URI` from the environment first and otherwise searches upward for a root `.env` file. Never commit credentials or real identity data.
 
-`POST /api/v1/documents/process` accepts the same form data and runs the processing pipeline:
+## API overview
 
-```bash
-curl -F 'file=@path/to/synthetic-pan.pdf;type=application/pdf' \
-  http://localhost:8000/api/v1/documents/process
-```
+All routes below are prefixed with `/api/v1` and are defined in `backend/app/api/v1/`.
 
-It returns document type, processed page count, OCR page text, extracted fields, and structural validation signals. `confidence: null` on extracted fields is intentional: Tesseract token confidence is not reliable field-level evidence.
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/document/process-ocr` | Upload `image_file`; run OCR, image-quality checks, document detection, and field extraction. Accepts optional `session_id` and `document_hint`. |
+| `POST` | `/document/validate-layout` | Upload `image_file`; check a document layout. Accepts optional `session_id` and `document_type`. |
+| `POST` | `/document/verify-machine-readable` | Upload `image_file`; inspect MRZ, barcode/QR data, Aadhaar QR, and cross-reference signals. |
+| `POST` | `/document/validate-checksum` | Validate supplied MRZ text for a supplied `session_id`. |
+| `POST` | `/document/detect-face` | Upload `image_file`; return an OpenCV portrait crop or a document-layout fallback crop. |
+| `POST` | `/forensics/ela-analysis` | Upload `image_file`; return ELA signal, heatmap, and anomaly regions. |
+| `POST` | `/biometrics/verify-match` | Compare supplied document and live-capture base64 images for a session. |
+| `POST` | `/biometrics/verify-by-id` | Load a document image from a case/session and compare it with a supplied live capture. |
+| `POST` | `/screening/orchestrate` | Consolidate stored session signals into a risk summary; never makes a final officer decision. |
+| `POST` | `/cases` | Create or replace a case by ID. |
+| `GET` | `/cases` | List cases; supports `risk`, `status`, and `search` query filters. |
+| `GET` | `/cases/{case_id}` | Retrieve a case. |
+| `PATCH` | `/cases/{case_id}` | Update a case’s status, risk level, or review notes. |
 
-`POST /api/v1/verification/documents/verify` runs the complete available pipeline and accepts an optional `selfie` image for passport face comparison. `GET /api/v1/verification` lists metadata-only history, `GET /api/v1/verification/{id}` returns a report, and `GET /api/v1/documents/{id}/report` provides the report-compatible route. `GET /api/v1/health` returns liveness plus per-service readiness.
+Document upload endpoints accept `.jpg`, `.jpeg`, `.png`, and `.pdf`; extension and magic bytes are checked. The current implementation processes only the first PDF page. Use `image_file` for multipart uploads, not `file`.
 
-Image preparation corrects EXIF orientation, resizes, applies median noise reduction, and normalizes contrast. Automatic perspective correction is not yet available because no reliable corner-detection model has been integrated; this is intentionally reported as a limitation rather than silently claiming correction.
-
-## Development workflow
-
-1. Start the backend, then the frontend.
-2. Upload only synthetic, dummy, or legally usable sample documents.
-3. Add later pipeline stages behind their existing modular service/module boundaries; do not make the upload controller perform OCR or model inference.
-
-## Tests
-
-```bash
-pytest
-```
-
-The tests cover upload validation, temporary-file cleanup, image/PDF processing, OCR failures, unknown documents, Aadhaar/passport/PAN extraction, and date/number validation with synthetic data.
-
-The audit status, prioritized backlog, and evidence are in [PROJECT_AUDIT.md](docs/PROJECT_AUDIT.md). The executable manual test matrix is in [MANUAL_TESTING.md](docs/MANUAL_TESTING.md). Obsidian-compatible project notes are in `docs/obsidian/`.
-
-## Security and limitations
-
-Uploads are restricted by size, extension, MIME type, and file signature, use generated temporary names, and are deleted after processing. History excludes raw documents, OCR text, and extracted identity fields. Authentication, rate limiting, malware scanning, durable encrypted persistence, calibrated fraud probabilities, and government/watchlist checks are not implemented.
-
-Or run the development containers:
+Example OCR request:
 
 ```bash
-docker compose up --build
+curl -X POST \
+  -F 'image_file=@path/to/synthetic-document.jpg' \
+  'http://localhost:8000/api/v1/document/process-ocr?document_hint=AUTO'
 ```
+
+The service does not currently expose the legacy `/health`, `/documents/upload`, `/documents/process`, or `/verification/documents/verify` routes described by older documentation.
+
+## Containers and tests
+
+The root `Dockerfile` builds the backend and starts it on port 8000. The present `docker-compose.yml` refers to `deployment/Dockerfile.backend` and `deployment/Dockerfile.frontend`, which are not in this repository, so `docker compose up --build` is not currently a working setup.
+
+`pyproject.toml` defines a `dev` extra with pytest, HTTPX, and Ruff, but there is no `tests/` directory in the current checkout. Add representative synthetic-only tests before treating this prototype as production-ready.
+
+## Data handling
+
+Use only synthetic data or data for which you have a clear legal basis and explicit operational approval. Never commit identity documents, face images, credentials, production database URIs, or other personal data. See `docs/security/` for project security notes.

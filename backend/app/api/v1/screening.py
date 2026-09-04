@@ -9,6 +9,7 @@ Routes:
   POST   /screening/orchestrate  (legacy) Run risk orchestration
 """
 import logging
+from copy import deepcopy
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
@@ -92,6 +93,30 @@ SEED_CASES = [
 ]
 
 
+def _build_demo_cases():
+    demo_cases = deepcopy(SEED_CASES)
+    for index in range(582):
+        template = deepcopy(SEED_CASES[index % len(SEED_CASES)])
+        sequence = index + 1
+        day = (index % 31) + 1
+        hour = 8 + (index % 10)
+        minute = (index * 7) % 60
+        status = "Approved" if index % 3 == 0 else "Pending" if index % 3 == 1 else "Rejected"
+        template.update({
+            "id": f"BR-2026-TEST-{sequence:04d}",
+            "date": f"{day} Aug 2026, {hour:02d}:{minute:02d} {'AM' if hour < 12 else 'PM'}",
+            "name": f"Test Candidate {sequence:03d}",
+            "riskLevel": "Low" if status == "Approved" else "Medium" if status == "Pending" else "High",
+            "status": status,
+            "reviewNotes": "Generated August test record.",
+        })
+        demo_cases.append(template)
+    return demo_cases
+
+
+DEMO_CASES = _build_demo_cases()
+
+
 async def _ensure_seeded():
     """Insert seed cases if the cases collection is empty."""
     try:
@@ -99,8 +124,18 @@ async def _ensure_seeded():
         col = db["cases"]
         count = await col.count_documents({})
         if count == 0:
-            await col.insert_many(SEED_CASES)
-            logger.info("Seeded 4 demo cases into MongoDB.")
+            await col.insert_many(DEMO_CASES)
+            logger.info("Seeded 586 August demo cases into MongoDB.")
+        else:
+            test_cursor = col.find({"id": {"$regex": r"^BR-2026-TEST-"}}, {"id": 1})
+            existing_test_ids = {doc["id"] async for doc in test_cursor}
+            missing_demo_cases = [
+                case for case in DEMO_CASES[4:]
+                if case["id"] not in existing_test_ids
+            ]
+            if missing_demo_cases:
+                await col.insert_many(missing_demo_cases)
+                logger.info("Added %d missing August demo cases to MongoDB.", len(missing_demo_cases))
     except Exception as e:
         logger.warning(f"Seeding skipped: {e}")
 

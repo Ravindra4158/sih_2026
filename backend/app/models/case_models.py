@@ -73,6 +73,7 @@ class CaseDocument(BaseModel):
     forensics: ForensicsData = Field(default_factory=ForensicsData)
     biometrics: BiometricsData = Field(default_factory=BiometricsData)
     warnings: List[str] = Field(default_factory=list)
+    allDocuments: List[Dict[str, Any]] = Field(default_factory=list)
     documentImageBase64: Optional[str] = None
     livePhotoBase64: Optional[str] = None
 

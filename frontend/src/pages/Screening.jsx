@@ -4,35 +4,39 @@ import { Header, Panel } from "./DashboardLayout";
 import {
   Bell, Upload, FileText, Camera, ArrowRight, ScanFace,
   Check, Eye, HelpCircle, User, CreditCard, Shield, Sparkles,
-  RotateCcw, Sliders, ChevronRight, ChevronLeft, ShieldCheck, Play, Loader2, X
+  RotateCcw, ShieldCheck, Play, Loader2, X
 } from "lucide-react";
 
 export default function Screening() {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState(0); // Step 0: Profile, Step 1: Scan
+  const [activeStep] = useState(1); // Open directly on the document upload step
 
 
-  const [simulateTampered, setSimulateTampered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Files & Previews (multiple documents)
   const [docFiles, setDocFiles] = useState([]); // array of { file, preview, type }
   const [selfieFile, setSelfieFile] = useState(null);
   const [selfiePreview, setSelfiePreview] = useState(null);
+  const [documentResolution, setDocumentResolution] = useState(null);
+
+  useEffect(() => {
+    const preview = docFiles[0]?.preview;
+    if (!preview || !preview.startsWith("data:image")) {
+      setDocumentResolution(null);
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => setDocumentResolution(`${image.naturalWidth} x ${image.naturalHeight}`);
+    image.src = preview;
+  }, [docFiles]);
 
   // Camera States
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraTarget, setCameraTarget] = useState(null); // 'document' or 'selfie'
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-
-  // Quality metrics checklist
-  const [qualityChecks, setQualityChecks] = useState({
-    resolution: "Pending",
-    blur: "Pending",
-    lighting: "Pending",
-    glare: "Pending"
-  });
 
   // Access Webcam API
   const startCamera = async (target) => {
@@ -95,26 +99,6 @@ export default function Screening() {
     stopCamera();
   };
 
-  // Run a mock Image Quality Assessment when a document preview is available (first document)
-  useEffect(() => {
-    const firstPreview = docFiles[0]?.preview;
-    if (firstPreview) {
-      setQualityChecks({
-        resolution: "1920x1080 (HD)",
-        blur: "0.04 (EXCELLENT)",
-        lighting: "94% (OPTIMAL)",
-        glare: simulateTampered ? "HIGH DENSITY (WARNING)" : "None (PASSED)",
-      });
-    } else {
-      setQualityChecks({
-        resolution: "Pending",
-        blur: "Pending",
-        lighting: "Pending",
-        glare: "Pending",
-      });
-    }
-  }, [docFiles, simulateTampered]);
-
   // docType selected from the doc type cards
   const [docType, setDocType] = useState("Passport");
   const [candidateName, setCandidateName] = useState("");
@@ -140,7 +124,6 @@ export default function Screening() {
       uniqueId,
       docType,
       candidateName: candidateName.trim() || "",
-      simulateTampered,
       // Serialise doc previews (base64 data URLs)
       docPreviews: docFiles.map(d => ({ preview: d.preview || null, name: d.file?.name || "document" })),
       selfiePreview: selfiePreview || null,
@@ -172,70 +155,6 @@ return (
     </header>
 
     <main className="content screening-content" style={{ maxWidth: '1040px', margin: '0 auto' }}>
-
-      {/* Banner with gradient overlay */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '16px',
-        padding: '24px 32px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '28px',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{ position: 'absolute', right: '-40px', top: '-40px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '16px', borderRadius: '12px', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ScanFace size={32} />
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', fontWeight: '800', color: '#60A5FA', letterSpacing: '0.15em', display: 'block', marginBottom: '4px' }}>SECURE GATEWAY</span>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0 }}>Border Screening Hub</h3>
-            <p style={{ fontSize: '13px', color: '#94A3B8', marginTop: '4px', lineHeight: '1.4' }}>Deploy validation checks, OCR extraction, and biometric spoof protection.</p>
-          </div>
-        </div>
-
-        {/* Stepped progress indicators */}
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: activeStep === 0 ? 'var(--primary)' : '#10B981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', border: '2px solid rgba(255,255,255,0.1)' }}>
-              {activeStep > 0 ? <Check size={14} /> : "1"}
-            </div>
-            <span style={{ fontSize: '12.5px', fontWeight: '600', color: activeStep === 0 ? 'white' : '#94A3B8' }}>Candidate profile</span>
-          </div>
-          <div style={{ width: '20px', height: '1px', background: 'rgba(255, 255, 255, 0.15)' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: activeStep === 1 ? 'var(--primary)' : 'rgba(255,255,255,0.05)', color: activeStep === 1 ? 'white' : '#94A3B8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', border: '2px solid rgba(255,255,255,0.1)' }}>
-              2
-            </div>
-            <span style={{ fontSize: '12.5px', fontWeight: '600', color: activeStep === 1 ? 'white' : '#64748B' }}>Sensor validation</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Step 1: Profile & Document Selection */}
-      {activeStep === 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.3s ease-out' }}>
-          <Panel title="CANDIDATE DOSSIER INFO">
-            <div style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            </div>
-          </Panel>
-
-          <button
-            type="button"
-            onClick={() => setActiveStep(1)}
-            className="btn-primary"
-            style={{ padding: '16px', fontSize: '15px', display: 'flex', gap: '8px', alignSelf: 'flex-end', minWidth: '220px', borderRadius: '10px' }}
-          >
-            Continue to Captures <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
 
       {/* Step 2: Uploads & Camera HUD Scanner */}
       {activeStep === 1 && (
@@ -327,39 +246,8 @@ return (
               </div>
             </Panel>
 
-            {/* Test Bypass Simulator */}
-            <section className="panel" style={{ border: '1px solid #DBEAFE', background: '#EFF6FF', padding: '20px', borderRadius: '12px' }}>
-              <div style={{ color: 'var(--primary)', borderBottom: '1px solid #BFDBFE', paddingBottom: '10px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sliders size={16} />
-                <span style={{ fontSize: '13.5px', fontWeight: '700' }}>Pipeline Scenario Simulator</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ fontSize: '12px', color: '#1E3A8A', lineHeight: '1.5' }}>
-                  Choose the target response path to simulate validation triggers.
-                </p>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px', fontWeight: '600', color: '#1E3A8A', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={simulateTampered}
-                    onChange={(e) => setSimulateTampered(e.target.checked)}
-                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  <span>Inject Expiry failure &amp; Forensic ELA Tamper warning</span>
-                </label>
-              </div>
-            </section>
-
             {/* Navigation button panel */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setActiveStep(0)}
-                className="btn-primary"
-                style={{ background: 'white', color: 'var(--text-dark)', border: '1px solid var(--border)', padding: '12px 20px', fontSize: '13px', display: 'flex', gap: '6px', borderRadius: '8px', boxShadow: 'none' }}
-              >
-                <ChevronLeft size={16} /> Edit Profile
-              </button>
-
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button
                 type="button"
                 onClick={handleStartScreening}
@@ -482,62 +370,19 @@ return (
               )}
             </Panel>
 
-            {/* Graphical Image Quality Assessment (IQA) */}
             <Panel title="QUALITY CHECK TELEMETRY">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0', fontSize: '13px' }}>
-
-                {/* Resolution bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Resolution Check</span>
-                    <strong style={{ color: qualityChecks.resolution !== "Pending" ? '#10B981' : 'var(--text-muted)' }}>{qualityChecks.resolution}</strong>
+              <div style={{ padding: '2px 16px 6px' }}>
+                {[
+                  ['Documents', docFiles.length ? `${docFiles.length} uploaded` : 'Waiting'],
+                  ['Resolution', documentResolution || (docFiles.length ? 'Available after image scan' : 'Waiting')],
+                  ['File size', docFiles[0]?.file?.size ? `${Math.round(docFiles[0].file.size / 1024)} KB` : 'Waiting'],
+                  ['Selfie capture', selfieFile ? 'Captured' : 'Not captured']
+                ].map(([label, value]) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                    <strong style={{ color: docFiles.length ? 'var(--text-dark)' : 'var(--text-muted)', fontSize: '12px' }}>{value}</strong>
                   </div>
-                  <div style={{ height: '5px', background: '#F1F5F9', borderRadius: '3px' }}>
-                    <div style={{ width: qualityChecks.resolution !== "Pending" ? '100%' : '0%', height: '100%', background: '#10B981', borderRadius: '3px', transition: 'width 0.3s' }} />
-                  </div>
-                </div>
-
-                {/* Blur bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Blur Margin Index</span>
-                    <strong style={{ color: qualityChecks.blur !== "Pending" ? '#10B981' : 'var(--text-muted)' }}>{qualityChecks.blur}</strong>
-                  </div>
-                  <div style={{ height: '5px', background: '#F1F5F9', borderRadius: '3px' }}>
-                    <div style={{ width: qualityChecks.blur !== "Pending" ? '92%' : '0%', height: '100%', background: '#10B981', borderRadius: '3px', transition: 'width 0.3s' }} />
-                  </div>
-                </div>
-
-                {/* Lighting bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Lighting Contrast</span>
-                    <strong style={{ color: qualityChecks.lighting !== "Pending" ? '#10B981' : 'var(--text-muted)' }}>{qualityChecks.lighting}</strong>
-                  </div>
-                  <div style={{ height: '5px', background: '#F1F5F9', borderRadius: '3px' }}>
-                    <div style={{ width: qualityChecks.lighting !== "Pending" ? '94%' : '0%', height: '100%', background: '#10B981', borderRadius: '3px', transition: 'width 0.3s' }} />
-                  </div>
-                </div>
-
-                {/* Glare check */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Glare Deflection</span>
-                    <strong style={{ color: qualityChecks.glare === "None (PASSED)" ? '#10B981' : qualityChecks.glare.includes("WARNING") ? '#EF4444' : 'var(--text-muted)' }}>
-                      {qualityChecks.glare}
-                    </strong>
-                  </div>
-                  <div style={{ height: '5px', background: '#F1F5F9', borderRadius: '3px' }}>
-                    <div style={{
-                      width: qualityChecks.glare !== "Pending" ? '100%' : '0%',
-                      height: '100%',
-                      background: simulateTampered ? '#EF4444' : '#10B981',
-                      borderRadius: '3px',
-                      transition: 'width 0.3s'
-                    }} />
-                  </div>
-                </div>
-
+                ))}
               </div>
             </Panel>
 

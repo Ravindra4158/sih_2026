@@ -39,6 +39,12 @@ export default function Cases() {
   // Server-side filtering is done via API; cases is already filtered
   const filteredCases = cases;
 
+  const getDocuments = (caseItem) => (
+    Array.isArray(caseItem.allDocuments) && caseItem.allDocuments.length > 0
+      ? caseItem.allDocuments
+      : [{ filename: caseItem.docType || "Document" }]
+  );
+
   return (
     <main className="content">
       <div className="page-heading dashboard-heading">
@@ -114,8 +120,16 @@ export default function Cases() {
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '500' }}>{c.id}</td>
                     <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{c.date}</td>
                     <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: '500' }}>{c.name}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{c.docType}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{c.docNo}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                      {getDocuments(c).map((document, index) => (
+                        <div key={`${c.id}-document-${index}`} style={{ marginBottom: index < getDocuments(c).length - 1 ? '4px' : 0 }}>
+                          {document.filename || `Document ${index + 1}`}
+                        </div>
+                      ))}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                      {c.docNo || 'N/A'}
+                    </td>
                     <td style={{ padding: '12px 16px' }}>
                       <span className={`recent-status status-${c.riskLevel === 'Low' ? 'green' : c.riskLevel === 'Medium' ? 'amber' : 'red'}`}>
                         {c.riskLevel}
@@ -128,7 +142,7 @@ export default function Cases() {
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{c.officer}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <Link to={`/screening/${c.id}/results`} style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600' }}>
+                      <Link to={`/screening/${c.id}/results?from=history`} style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600' }}>
                         <Eye size={14} /> View
                       </Link>
                     </td>

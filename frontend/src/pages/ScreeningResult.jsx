@@ -73,6 +73,8 @@ export default function ScreeningResult() {
   const isHigh = riskLevel === "High";
   const isMed = riskLevel === "Medium";
   const riskColor = isHigh ? "#EF4444" : isMed ? "#F59E0B" : "#10B981";
+  const riskScore = Math.max(0, Math.min(100, Number(caseData.overall_risk_score ?? (isHigh ? 91 : isMed ? 64 : 14)) || 0));
+  const gaugeFill = riskScore * 1.8;
   const riskText = riskLevel.toUpperCase() + " RISK";
   const status = caseData.status || "Pending";
 
@@ -147,7 +149,7 @@ export default function ScreeningResult() {
           <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>COMPUTED RISK SCORE</span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', margin: '16px 0 8px' }}>
             <span style={{ fontSize: '48px', fontWeight: '800', color: riskColor, lineHeight: '1' }}>
-              {caseData.overall_risk_score ?? (isHigh ? 91 : isMed ? 64 : 14)}
+              {riskScore}
             </span>
             <span style={{ fontSize: '18px', color: 'var(--text-muted)' }}>/100</span>
           </div>
@@ -159,7 +161,9 @@ export default function ScreeningResult() {
         {/* Dynamic gauge animation */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingRight: '16px' }}>
           <div style={{ position: 'relative', width: '130px', height: '65px', overflow: 'hidden' }}>
-            <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '12px solid #F1F5F9', borderTopColor: riskColor, borderRightColor: isHigh || isMed ? riskColor : '#F1F5F9', borderBottomColor: '#F1F5F9', transform: 'rotate(-45deg)' }} />
+            <div style={{ width: '130px', height: '130px', borderRadius: '50%', background: `conic-gradient(from 270deg, ${riskColor} 0deg ${gaugeFill}deg, #F1F5F9 ${gaugeFill}deg 180deg, transparent 180deg)`, position: 'relative' }}>
+              <div style={{ position: 'absolute', inset: '12px', borderRadius: '50%', background: 'white' }} />
+            </div>
             <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', textAlign: 'center' }}>
               <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>GAUGE</span>
             </div>

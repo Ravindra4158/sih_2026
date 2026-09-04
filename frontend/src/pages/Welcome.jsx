@@ -1,7 +1,18 @@
+import { useEffect } from "react";
 import { Shield, ShieldCheck, Activity, Zap, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Welcome() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const redirectTimer = window.setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 1000);
+
+    return () => window.clearTimeout(redirectTimer);
+  }, [navigate]);
+
   return (
     <div className="welcome-container">
       <div className="welcome-left">

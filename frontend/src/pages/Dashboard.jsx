@@ -54,10 +54,10 @@ export default function Dashboard() {
         </div>
 
         <div className="stats dashboard-stats">
-          <Stat number={loading ? "…" : total} label="Total Screenings" foot="all time" />
-          <Stat number={loading ? "…" : approved} label="Verified (Green)" tone="green" foot={total ? `${Math.round(approved/total*100)}%` : "—"} />
-          <Stat number={loading ? "…" : medium} label="Flagged (Amber)" tone="amber" foot={total ? `${Math.round(medium/total*100)}%` : "—"} />
-          <Stat number={loading ? "…" : high} label="High Risk (Red)" tone="red" foot={total ? `${Math.round(high/total*100)}%` : "—"} />
+          <Stat number={loading ? "…" : total} label="Total Screenings" foot="this month" />
+          <Stat number={loading ? "…" : approved} label="Verified" tone="green" foot={total ? `${Math.round(approved/total*100)}%` : "—"} />
+          <Stat number={loading ? "…" : medium} label="Flagged" tone="amber" foot={total ? `${Math.round(medium/total*100)}%` : "—"} />
+          <Stat number={loading ? "…" : high} label="High Risk" tone="red" foot={total ? `${Math.round(high/total*100)}%` : "—"} />
         </div>
 
         <div className="grid-2 dashboard-grid">
@@ -98,7 +98,7 @@ export default function Dashboard() {
                 style={{
                   background: total > 0 ? `conic-gradient(
                     #22C55E 0% ${Math.round(approved/total*100)}%,
-                    #F59E0B ${Math.round(approved/total*100)}% ${Math.round((approved+medium)/total*100)}%,
+                    #FACC15 ${Math.round(approved/total*100)}% ${Math.round((approved+medium)/total*100)}%,
                     #EF4444 ${Math.round((approved+medium)/total*100)}% 100%
                   )` : undefined
                 }}
@@ -109,9 +109,9 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="legend">
-                <span><i className="green-bg" /> Low Risk (Green) <b>{approved} ({total ? Math.round(approved/total*100) : 0}%)</b></span>
-                <span><i className="amber-bg" /> Medium Risk (Amber) <b>{medium} ({total ? Math.round(medium/total*100) : 0}%)</b></span>
-                <span><i className="red-bg" /> High Risk (Red) <b>{high} ({total ? Math.round(high/total*100) : 0}%)</b></span>
+                <span><i className="green-bg" /> Low Risk <b>{approved} ({total ? Math.round(approved/total*100) : 0}%)</b></span>
+                <span><i className="amber-bg" /> Medium Risk <b>{medium} ({total ? Math.round(medium/total*100) : 0}%)</b></span>
+                <span><i className="red-bg" /> High Risk <b>{high} ({total ? Math.round(high/total*100) : 0}%)</b></span>
               </div>
             </div>
           </Panel>
