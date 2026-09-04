@@ -68,35 +68,46 @@ async def verify_match(
         verification_status = "MISMATCH"
     else:
         try:
+            import asyncio
             from deepface import DeepFace
-            # Run DeepFace verification
-            result = DeepFace.verify(
-                img1_path=doc_tmp_path,
-                img2_path=live_tmp_path,
-                enforce_detection=False,
-                model_name="VGG-Face"
-            )
-            is_verified = result.get("verified", False)
-            distance = result.get("distance", 1.0)
+
+            # DeepFace.verify is CPU-bound; run in a thread pool to avoid blocking the event loop
+            def _run_deepface():
+                return DeepFace.verify(
+                    img1_path=doc_tmp_path,
+                    img2_path=live_tmp_path,
+                    model_name="VGG-Face",
+                    detector_backend="opencv",
+                    distance_metric="cosine",
+                    enforce_detection=False,
+                    align=True
+                )
+
+            result = await asyncio.to_thread(_run_deepface)
+            is_verified = bool(result.get("verified", False))
+            distance = float(result.get("distance", 1.0))
+            threshold = float(result.get("threshold", 0.40))
             
-            # DeepFace distance: 0 is identical, 1 is completely different
-            face_match_score = float(max(0.0, (1.0 - distance) * 100))
+            # Convert cosine distance to 0-100% similarity score
+            # When distance == 0 -> 100%, when distance >= 1.0 -> 0%
+            normalized_score = max(0.0, min(100.0, (1.0 - (distance / max(threshold * 1.5, 0.68))) * 100))
+            face_match_score = round(normalized_score, 1)
+
             if is_verified:
                 verification_status = "MATCH_CONFIRMED"
             else:
                 verification_status = "MISMATCH"
-                flags.append("BIOMETRIC_MISMATCH")
+                flags.append(f"BIOMETRIC_MISMATCH (Distance: {distance:.2f}, Threshold: {threshold:.2f})")
         except ImportError:
-            logger.warning("DeepFace not installed. Using heuristic face match simulation.")
-            # Heuristic match: if images are valid, simulate match based on standard check
+            logger.warning("DeepFace not installed in environment. Falling back to heuristic match simulation.")
             face_match_score = 92.5
             verification_status = "MATCH_CONFIRMED"
             flags.append("BIOMETRICS_HEURISTIC_MODE")
         except Exception as e:
-            logger.error(f"DeepFace verification failed: {e}")
-            face_match_score = 50.0
+            logger.error(f"DeepFace verification encountered error: {e}")
+            face_match_score = 45.0
             verification_status = "MANUAL_REVIEW_REQUIRED"
-            flags.append("BIOMETRIC_VERIFICATION_ERROR")
+            flags.append(f"BIOMETRIC_VERIFICATION_ERROR: {str(e)}")
 
     # Clean up temp files
     for path in (doc_tmp_path, live_tmp_path):

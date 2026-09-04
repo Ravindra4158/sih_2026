@@ -3,10 +3,46 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle, AlertTriangle, AlertCircle, ShieldCheck, HelpCircle, FileText, Fingerprint, Eye, Database, Loader2 } from "lucide-react";
 import { Panel } from "./DashboardLayout";
 import { useCaseData } from "../hooks/useCaseData";
+import { updateCaseStatus } from "../services/api";
 
 export default function ScreeningResult() {
   const { id } = useParams();
   const { caseData, loading } = useCaseData(id);
+  const [currentStatus, setCurrentStatus] = useState(null);
+  const [decisionMsg, setDecisionMsg] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (caseData) {
+      setCurrentStatus(caseData.status || "Pending");
+    }
+  }, [caseData]);
+
+  const handleQuickDecision = async (newStatus) => {
+    setIsUpdating(true);
+    let newRisk = caseData?.riskLevel || "Low";
+    if (newStatus === "Approved") newRisk = "Low";
+    if (newStatus === "Rejected") newRisk = "High";
+    if (newStatus === "Pending") newRisk = "Medium";
+
+    try {
+      await updateCaseStatus(id, { status: newStatus, riskLevel: newRisk });
+    } catch {
+      // LocalStorage fallback
+      try {
+        const local = JSON.parse(localStorage.getItem("ai_border_cases") || "[]");
+        const idx = local.findIndex(c => c.id === id);
+        if (idx !== -1) {
+          local[idx] = { ...local[idx], status: newStatus, riskLevel: newRisk };
+          localStorage.setItem("ai_border_cases", JSON.stringify(local));
+        }
+      } catch { }
+    } finally {
+      setIsUpdating(false);
+      setCurrentStatus(newStatus);
+      setDecisionMsg(`Status updated to ${newStatus.toUpperCase()}`);
+    }
+  };
 
   if (!caseData) {
     return (
@@ -131,29 +167,76 @@ export default function ScreeningResult() {
           <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>Dynamic Risk Level</span>
         </div>
 
-        {/* Action Recommendation */}
+        {/* Action Recommendation & Quick Decision Bar */}
         <div>
           <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>RECOMMENDED CLEARANCE ACTION</span>
-          <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
             <div style={{ background: riskColor + '10', padding: '10px', borderRadius: '50%', color: riskColor, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start' }}>
               {isHigh ? <AlertCircle size={28} /> : isMed ? <AlertTriangle size={28} /> : <ShieldCheck size={28} />}
             </div>
             <div>
-              <strong style={{ display: 'block', fontSize: '16px', color: isHigh ? '#B91C1C' : isMed ? '#B45309' : '#047857', marginBottom: '6px' }}>
-                {recommendationTitle}
-              </strong>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '16px' }}>
-                {recommendationDesc}
-              </p>
-              
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '600' }}>Status: </span>
-                <span className={`recent-status status-${status === 'Approved' ? 'green' : status === 'Rejected' ? 'red' : 'amber'}`}>
-                  {status.toUpperCase()}
-                </span>
-              </div>
+              <strong style={{ fontSize: '15px', color: 'var(--text-dark)', display: 'block' }}>{recommendationTitle}</strong>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: '1.4' }}>{recommendationDesc}</p>
             </div>
           </div>
+
+          {/* Direct Decision Action Buttons — hidden once finalised */}
+          {currentStatus === "Approved" || currentStatus === "Rejected" ? (
+            /* ── Decision already made — show locked badge ── */
+            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px dashed var(--border)", display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: "10px 18px", borderRadius: "8px", fontWeight: "700", fontSize: "14px",
+                background: currentStatus === "Approved" ? "#ECFDF5" : "#FEF2F2",
+                color: currentStatus === "Approved" ? "#047857" : "#991B1B",
+                border: currentStatus === "Approved" ? "1.5px solid #6EE7B7" : "1.5px solid #FCA5A5",
+              }}>
+                {currentStatus === "Approved"
+                  ? <><ShieldCheck size={16} /> ✓ ENTRY APPROVED — Decision Finalised</>
+                  : <><AlertCircle size={16} /> ✗ ENTRY REJECTED — Decision Finalised</>}
+              </div>
+              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                Use <em>Decision Override</em> to change.
+              </span>
+            </div>
+          ) : (
+            /* ── Pending / awaiting decision ── */
+            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px dashed var(--border)", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => handleQuickDecision("Approved")}
+                disabled={isUpdating}
+                className="btn-primary"
+                style={{ background: "#10B981", color: "white", padding: "8px 14px", fontSize: "12px", borderRadius: "6px", cursor: "pointer", border: "none", display: "inline-flex", alignItems: "center", gap: "6px", opacity: isUpdating ? 0.6 : 1 }}
+              >
+                <ShieldCheck size={14} /> Approve Entry
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDecision("Rejected")}
+                disabled={isUpdating}
+                className="btn-primary"
+                style={{ background: "#EF4444", color: "white", padding: "8px 14px", fontSize: "12px", borderRadius: "6px", cursor: "pointer", border: "none", display: "inline-flex", alignItems: "center", gap: "6px", opacity: isUpdating ? 0.6 : 1 }}
+              >
+                <AlertCircle size={14} /> Reject &amp; Deny
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDecision("Pending")}
+                disabled={isUpdating}
+                className="btn-primary"
+                style={{ background: "#F59E0B", color: "white", padding: "8px 14px", fontSize: "12px", borderRadius: "6px", cursor: "pointer", border: "none", display: "inline-flex", alignItems: "center", gap: "6px", opacity: isUpdating ? 0.6 : 1 }}
+              >
+                <AlertTriangle size={14} /> Flag for Review
+              </button>
+              {decisionMsg && (
+                <div style={{ width: "100%", marginTop: "8px", fontSize: "12px", fontWeight: "bold", color: decisionMsg.includes("APPROVED") ? "#10B981" : decisionMsg.includes("REJECTED") ? "#EF4444" : "#F59E0B" }}>
+                  ✓ {decisionMsg}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -163,17 +246,17 @@ export default function ScreeningResult() {
         <Panel title="AUTOMATED VERIFICATION CHECKS">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 20px' }}>
             {findings.map((item, idx) => (
-              <div 
-                key={idx} 
-                style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '11px 16px', 
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '11px 16px',
                   borderRadius: '8px',
                   backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF',
                   border: '1px solid #EEF2F6',
-                  fontSize: '13px' 
+                  fontSize: '13px'
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-dark)', fontWeight: '500' }}>
@@ -184,8 +267,8 @@ export default function ScreeningResult() {
                   )}
                   {item.name}
                 </span>
-                <span 
-                  style={{ 
+                <span
+                  style={{
                     color: item.status ? '#047857' : '#B91C1C',
                     fontWeight: '600',
                     background: item.status ? '#ECFDF5' : '#FEF2F2',
@@ -215,13 +298,13 @@ export default function ScreeningResult() {
                 ["Expiry Date", caseData.details?.expiryDate || "N/A"],
                 ["Nationality", caseData.details?.nationality || "Indian"]
               ].map((item, idx) => (
-                <div 
-                  key={idx} 
-                  style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    padding: '11px 16px', 
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '11px 16px',
                     borderRadius: '8px',
                     backgroundColor: idx % 2 === 0 ? '#F8FAFC' : '#FFFFFF',
                     border: '1px solid #EEF2F6',

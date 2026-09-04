@@ -1,88 +1,104 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, MapPin, Mail, Lock, EyeOff, ShieldCheck } from "lucide-react";
+import { User, Shield, Lock, Eye, EyeOff, Mail, ArrowRight } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function SignUp() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [badgeId, setBadgeId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSignUp = (e) => {
     e.preventDefault();
-    // Simulate sign up and go to login
-    navigate("/login");
+    login({ username: badgeId || fullName || "Officer", role: "officer" });
+    navigate("/2fa");
   };
 
   return (
-    <div className="auth-box wide-auth-box">
-      <div className="auth-top-bar">
-        <Link to="/login" className="btn-back">← Back</Link>
-        <div className="auth-top-role">
-          <ShieldCheck size={16} /> Officer Sign Up
-        </div>
+    <div className="auth-box">
+      <div className="auth-box-header">
+        <h2>Officer Registration</h2>
+        <p>Register official credentials for Border Screening Access</p>
       </div>
 
-      <div className="auth-box-header signup-header">
-        <div className="login-icon-wrap">
-          <User size={32} />
-        </div>
-        <h2>Create Officer Account</h2>
-        <p>Fill in your details to create your account</p>
-      </div>
-
-      <form className="auth-form" onSubmit={handleSignUp}>
+      <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="input-group">
-          <User className="input-icon" size={18} />
-          <div className="input-content">
-            <label>Full Name</label>
-            <input type="text" placeholder="Enter your full name" required />
+          <label>Full Name</label>
+          <div className="input-with-icon">
+            <User className="input-icon" size={18} />
+            <input 
+              type="text" 
+              placeholder="e.g. Officer Rajesh Kumar"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
           </div>
         </div>
 
         <div className="input-group">
-          <MapPin className="input-icon" size={18} />
-          <div className="input-content">
-            <label>Checkpoint</label>
-            <input type="text" placeholder="Enter your checkpoint" required />
+          <label>Official Email Address</label>
+          <div className="input-with-icon">
+            <Mail className="input-icon" size={18} />
+            <input 
+              type="email" 
+              placeholder="officer@immigration.gov.in"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
         </div>
 
         <div className="input-group">
-          <Mail className="input-icon" size={18} />
-          <div className="input-content">
-            <label>Email Address</label>
-            <input type="email" placeholder="Enter your official email" required />
+          <label>Badge / Employee ID</label>
+          <div className="input-with-icon">
+            <Shield className="input-icon" size={18} />
+            <input 
+              type="text" 
+              placeholder="IND-IMM-88421"
+              value={badgeId}
+              onChange={(e) => setBadgeId(e.target.value)}
+              required
+            />
           </div>
         </div>
 
         <div className="input-group">
-          <Lock className="input-icon" size={18} />
-          <div className="input-content">
-            <label>New Password</label>
-            <input type="password" placeholder="Enter new password" required />
+          <label>Secure Password</label>
+          <div className="input-with-icon">
+            <Lock className="input-icon" size={18} />
+            <input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="••••••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button 
+              type="button" 
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          <EyeOff className="input-icon-right" size={18} />
         </div>
 
-        <div className="input-group">
-          <Lock className="input-icon" size={18} />
-          <div className="input-content">
-            <label>Confirm Password</label>
-            <input type="password" placeholder="Confirm your password" required />
-          </div>
-          <EyeOff className="input-icon-right" size={18} />
-        </div>
-
-        <div className="password-requirements">
-          <Lock size={16} className="req-icon" />
-          <p>Password must be at least 8 characters long and contain uppercase, lowercase, number and special character.</p>
-        </div>
-
-        <button type="submit" className="btn-primary btn-block signup-btn">
-          <User size={18} /> Create Account
+        <button type="submit" className="btn-primary auth-submit" style={{ marginTop: '8px' }}>
+          <span>Register &amp; Proceed to 2FA</span>
+          <ArrowRight size={18} />
         </button>
-      </form>
 
-      <div className="auth-footer-link">
-        Already have an account? <Link to="/login">Sign In</Link>
-      </div>
+        <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
+          Already have an officer account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Log In</Link>
+        </div>
+      </form>
     </div>
   );
 }

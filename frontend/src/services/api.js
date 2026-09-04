@@ -11,18 +11,35 @@ const API_BASE_URL =
 // Helper: JSON fetch wrapper
 // ---------------------------------------------------------------------------
 async function apiFetch(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
-  let body;
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs || 15000; // 15s timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    body = await response.json();
-  } catch {
-    body = { detail: `Server returned ${response.status} with no JSON body.` };
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    let body;
+    try {
+      body = await response.json();
+    } catch {
+      body = { detail: `Server returned ${response.status} with no JSON body.` };
+    }
+    if (!response.ok) {
+      const msg = body?.detail ?? `Request failed with status ${response.status}`;
+      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    }
+    return body;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error(`Request to ${path} timed out after ${timeoutMs / 1000}s`);
+    }
+    throw err;
   }
-  if (!response.ok) {
-    const msg = body?.detail ?? `Request failed with status ${response.status}`;
-    throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-  }
-  return body;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +115,44 @@ export async function processOcrDocument(file, documentHint = "AUTO", sessionId 
   );
 }
 
+/**
+ * Validate document layout bounding boxes against known document templates.
+ * @param {File|Blob} file         – JPEG, PNG, or PDF
+ * @param {string} documentType    – "AUTO" | "AADHAAR" | "PAN" | "PASSPORT"
+ * @param {string} sessionId       – Optional session ID
+ */
+export async function validateLayout(file, documentType = "AUTO", sessionId = null) {
+  const formData = new FormData();
+  formData.append("image_file", file, file.name ?? "document.jpg");
+
+  const params = new URLSearchParams();
+  params.set("document_type", documentType);
+  if (sessionId) params.set("session_id", sessionId);
+
+  return apiFetch(
+    `/document/validate-layout?${params}`,
+    { method: "POST", body: formData }
+  );
+}
+
+/**
+ * Verify machine readable zones (MRZ, QR code, PDF417/Barcodes).
+ * @param {File|Blob} file         – JPEG, PNG, or PDF
+ * @param {string} sessionId       – Optional session ID
+ */
+export async function verifyMachineReadable(file, sessionId = null) {
+  const formData = new FormData();
+  formData.append("image_file", file, file.name ?? "document.jpg");
+
+  const params = new URLSearchParams();
+  if (sessionId) params.set("session_id", sessionId);
+
+  return apiFetch(
+    `/document/verify-machine-readable?${params}`,
+    { method: "POST", body: formData }
+  );
+}
+
 // ---------------------------------------------------------------------------
 // ELA Forensics – Tampering detection
 // ---------------------------------------------------------------------------
@@ -169,6 +224,29 @@ export async function verifyBiometrics(
   });
 }
 
+/**
+ * Verify live camera capture against an existing Case ID or Session ID using DeepFace.
+ * @param {string}   id                 – Case ID or Session ID
+ * @param {string}   liveCaptureBase64  – Base64 string of camera capture
+ * @param {number[]} earFrameSeries     – Optional EAR series for blink liveness
+ */
+export async function verifyFaceById(
+  id,
+  liveCaptureBase64,
+  earFrameSeries = []
+) {
+  return apiFetch("/biometrics/verify-by-id", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: id,
+      live_capture_base64: liveCaptureBase64,
+      ear_frame_series: earFrameSeries,
+    }),
+  });
+}
+
+
 // ---------------------------------------------------------------------------
 // Orchestration – Final risk screening
 // ---------------------------------------------------------------------------
@@ -179,6 +257,26 @@ export async function runScreening(sessionId) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Face Detection in Document Image
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect a face in a document image using the backend OpenCV pipeline.
+ * @param {Blob|File} blob       – The document image blob
+ * @param {string}    docHint   – "AADHAAR" | "PAN" | "PASSPORT" | "DRIVING_LICENCE" | "AUTO"
+ */
+export async function detectFaceInDocument(blob, docHint = "AUTO") {
+  const formData = new FormData();
+  formData.append("image_file", blob, "document.jpg");
+  const params = new URLSearchParams({ document_hint: docHint });
+  return apiFetch(`/document/detect-face?${params}`, {
+    method: "POST",
+    body: formData,
+    timeoutMs: 20000,
   });
 }
 

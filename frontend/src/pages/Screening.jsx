@@ -6,7 +6,6 @@ import {
   Check, Eye, HelpCircle, User, CreditCard, Shield, Sparkles,
   RotateCcw, Sliders, ChevronRight, ChevronLeft, ShieldCheck, Play, Loader2, X
 } from "lucide-react";
-import { processOcrDocument, runElaAnalysis, saveCase, verifyBiometrics, runScreening } from "../services/api";
 
 export default function Screening() {
   const navigate = useNavigate();
@@ -42,9 +41,12 @@ export default function Screening() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 } });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // Wait a tick for <video> element to mount if it wasn't rendered yet
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
     } catch (err) {
       console.warn("Webcam access denied or unavailable. Running in simulation mode.", err);
     }
@@ -113,7 +115,11 @@ export default function Screening() {
     }
   }, [docFiles, simulateTampered]);
 
-  const handleStartScreening = async (e) => {
+  // docType selected from the doc type cards
+  const [docType, setDocType] = useState("Passport");
+  const [candidateName, setCandidateName] = useState("");
+
+  const handleStartScreening = (e) => {
     e.preventDefault();
 
     if (docFiles.length === 0) {
@@ -122,156 +128,33 @@ export default function Screening() {
     }
 
     setIsSubmitting(true);
-    const uniqueId = `BR-2026-${Math.floor(10000 + Math.random() * 90000)}`;
 
-    let hint = "AUTO";
-    if (docType.includes("Aadhaar")) hint = "AADHAAR";
-    else if (docType.includes("PAN")) hint = "PAN";
-    else if (docType.includes("Passport")) hint = "PASSPORT";
+    // Generate unique Case ID based on timestamp
+    const now = new Date();
+    const timestampStr = now.toISOString().replace(/[-T:.Z]/g, "").slice(4, 14); // MMDDHHMMSS
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const uniqueId = `BR-2026-${timestampStr}-${randomSuffix}`;
 
-    // Run OCR and ELA in parallel for each uploaded document
-    const ocrResponses = [];
-    const elaResponses = [];
-    let bioResponse = null;
-    let orchestrateResponse = null;
+    // Serialise only the data-URL previews and metadata (Files cannot be stored in sessionStorage)
+    const sessionPayload = {
+      uniqueId,
+      docType,
+      candidateName: candidateName.trim() || "",
+      simulateTampered,
+      // Serialise doc previews (base64 data URLs)
+      docPreviews: docFiles.map(d => ({ preview: d.preview || null, name: d.file?.name || "document" })),
+      selfiePreview: selfiePreview || null,
+    };
 
     try {
-      const ocrElaPromises = docFiles.map(item => {
-        const file = item.file;
-        if (file instanceof Blob || file instanceof File) {
-          return Promise.allSettled([
-            processOcrDocument(file, hint, uniqueId),
-            runElaAnalysis(file, 90, uniqueId),
-          ]);
-        }
-        return Promise.resolve([null, null]);
-      });
-      const settledResults = await Promise.all(ocrElaPromises);
-      settledResults.forEach(result => {
-        const [ocrResult, elaResult] = result;
-        if (ocrResult && ocrResult.status === "fulfilled") ocrResponses.push(ocrResult.value);
-        else if (ocrResult) console.warn("OCR failed:", ocrResult.reason);
-        if (elaResult && elaResult.status === "fulfilled") elaResponses.push(elaResult.value);
-        else if (elaResult) console.warn("ELA failed:", elaResult.reason);
-      });
-      // For simplicity, take the first successful OCR/ELA response for downstream processing
-      const ocrResponse = ocrResponses[0] || null;
-      const elaResponse = elaResponses[0] || null;
-
-      // Run Biometrics if selfie captured and at least one document preview is available
-      if (selfiePreview && docFiles[0]?.preview) {
-        try {
-          const docPreview = docFiles[0].preview;
-          bioResponse = await verifyBiometrics(uniqueId, docPreview, selfiePreview, [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]);
-        } catch (e) {
-          console.warn("Biometrics failed:", e);
-        }
-      }
-
-      // Run final decision orchestration on backend
-      try {
-        orchestrateResponse = await runScreening(uniqueId);
-      } catch (e) {
-        console.warn("Orchestration failed:", e);
-      }
+      sessionStorage.setItem(`screening_${uniqueId}`, JSON.stringify(sessionPayload));
     } catch (err) {
-      console.warn("API call error (using fallback values):", err);
+      console.warn("sessionStorage write failed:", err);
     }
 
-  const parsed = ocrResponse?.parsed_fields || {};
-  const detectedDocType = ocrResponse?.document_type || docType;
-  const finalName = parsed.name || candidateName.trim() || "Anjali Gupta";
-  const finalDocNo = parsed.aadhaar_number || parsed.pan_number || parsed.document_number || (docType === "Passport" ? "P5539201" : "9982 1042 8847");
-  const finalDob = parsed.date_of_birth || "12/06/1994";
-  const finalGender = parsed.sex === "F" ? "Female" : parsed.sex === "M" ? "Male" : "Other";
-  const finalNationality = parsed.nationality || "Indian";
-
-  const newCase = {
-    id: uniqueId,
-    date: new Date().toLocaleString("en-IN", { hour12: true, dateStyle: "medium", timeStyle: "short" }),
-    name: finalName,
-    docType: detectedDocType,
-    docNo: finalDocNo,
-    riskLevel: orchestrateResponse?.risk_level ?? (simulateTampered ? "High" : "Low"),
-    status: orchestrateResponse?.final_action ?? "Pending",
-    officer: "Rajesh K.",
-    reviewNotes: "",
-    details: {
-      dob: finalDob,
-      nationality: finalNationality,
-      gender: finalGender,
-      issueDate: parsed.issue_date || "14/08/2021",
-      expiryDate: parsed.expiry_date || (docType === "Passport" ? (simulateTampered ? "13/08/2026" : "13/08/2031") : "N/A")
-    },
-    iqa: {
-      blurScore: ocrResponse?.iqa_metrics?.blur_score ?? 0.05,
-      glareDetected: ocrResponse?.iqa_metrics?.glare_detected ?? simulateTampered,
-      passQualityCheck: ocrResponse?.iqa_metrics?.pass_quality_check ?? true
-    },
-    ocr: {
-      rawText: ocrResponse?.raw_text || (docType === "Passport"
-        ? `REPUBLIC OF INDIA\nPASSPORT\nType: P  Country Code: IND  Passport No: ${finalDocNo}\nSurname: GUPTA\nGiven Names: ${finalName}\nNationality: INDIAN\nDate of birth: ${finalDob}`
-        : `GOVERNMENT OF INDIA\n${finalName}\nDOB: ${finalDob}\n${finalDocNo}`),
-      parsedFields: {
-        "Document Type": detectedDocType,
-        "Document Number": finalDocNo,
-        "Full Name": finalName,
-        "Date of Birth": finalDob,
-        ...(parsed.father_name ? { "Father's Name": parsed.father_name } : {})
-      },
-      confidenceScores: ocrResponse?.confidence_scores || {
-        "Document Number": 99.1,
-        "Full Name": 98.6,
-        "Date of Birth": 97.4
-      }
-    },
-    forensics: {
-      tamperDetected: elaResponse ? elaResponse.tamper_detected : simulateTampered,
-      tamperConfidenceScore: elaResponse ? elaResponse.tamper_confidence_score : (simulateTampered ? 87.5 : 4.2),
-      anomalyRegions: elaResponse ? (elaResponse.anomaly_regions ?? []) : (simulateTampered ? [
-        {
-          region_label: "Digital Modification (Expiry Date Zone)",
-          bounding_box: { x: 260, y: 180, width: 130, height: 28 },
-          error_variance: 58.4
-        }
-      ] : []),
-      elaHeatmapBase64: elaResponse?.ela_heatmap_base64 ?? (simulateTampered ? "MOCK_ELA" : null),
-      elaFlags: elaResponse?.flags_raised ?? [],
-      imageWidth: elaResponse?.image_width ?? (simulateTampered ? 400 : null),
-      imageHeight: elaResponse?.image_height ?? (simulateTampered ? 300 : null),
-    },
-    biometrics: {
-      faceMatchScore: bioResponse ? bioResponse.face_match_score : (simulateTampered ? 48.2 : 93.8),
-      verificationStatus: bioResponse ? bioResponse.verification_status : (simulateTampered ? "MISMATCH" : "MATCH_CONFIRMED"),
-      livenessCheck: {
-        isLive: bioResponse ? bioResponse.liveness_check.is_live : true,
-        blinkDetected: bioResponse ? bioResponse.liveness_check.blink_detected : true,
-        minimumEar: bioResponse ? bioResponse.liveness_check.minimum_ear : 0.17,
-        padScore: bioResponse ? bioResponse.liveness_check.pad_score : 0.94
-      },
-      earFrameSeries: [0.31, 0.30, 0.32, 0.17, 0.16, 0.31, 0.32, 0.31]
-    },
-    warnings: orchestrateResponse?.summary_flags || (simulateTampered ? [
-      "DOCUMENT_EXPIRED: Expiry date 13/08/2026 is in the past.",
-      "ELA_TAMPERING_DETECTED: High digital re-compression variance in expiry date region.",
-      "BIOMETRIC_MISMATCH: Face comparison similarity is 48.2% (fails identity threshold)."
-    ] : [])
+    // Navigate immediately — ScreeningPipeline will run all API calls and log them live
+    navigate(`/screening/${uniqueId}`);
   };
-
-  // Persist to MongoDB via backend API; fall back to localStorage if offline
-  try {
-    await saveCase(newCase);
-  } catch (err) {
-    console.warn("Backend saveCase failed, storing locally:", err);
-    try {
-      const local = JSON.parse(localStorage.getItem("ai_border_cases") || "[]");
-      local.unshift(newCase);
-      localStorage.setItem("ai_border_cases", JSON.stringify(local));
-    } catch { }
-  }
-  setIsSubmitting(false);
-  navigate(`/screening/${uniqueId}`);
-};
 
 const docTypes = [
   { name: "Passport", desc: "International Travel", icon: FileText, color: "#2563EB" },
@@ -367,14 +250,24 @@ return (
                 <div className="dropzone" onDrop={e => {
                   e.preventDefault();
                   const files = Array.from(e.dataTransfer.files);
-                  const newDocs = files.map(f => ({ file: f, preview: URL.createObjectURL(f), type: 'Document' }));
-                  setDocFiles(prev => [...prev, ...newDocs]);
+                  files.forEach(f => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setDocFiles(prev => [...prev, { file: f, preview: reader.result, type: 'Document' }]);
+                    };
+                    reader.readAsDataURL(f);
+                  });
                 }} onDragOver={e => e.preventDefault()} style={{ border: '2px dashed var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', background: 'rgba(255,255,255,0.05)' }}>
                   <p style={{ marginBottom: '12px', color: 'var(--text-muted)' }}>Drag & Drop documents here or click to select</p>
-                  <input type="file" multiple accept=".jpg,.png,.pdf" onChange={e => {
+                  <input type="file" multiple accept=".jpg,.png,.jpeg,.pdf" onChange={e => {
                     const files = Array.from(e.target.files);
-                    const newDocs = files.map(f => ({ file: f, preview: URL.createObjectURL(f), type: 'Document' }));
-                    setDocFiles(prev => [...prev, ...newDocs]);
+                    files.forEach(f => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setDocFiles(prev => [...prev, { file: f, preview: reader.result, type: 'Document' }]);
+                      };
+                      reader.readAsDataURL(f);
+                    });
                   }} style={{ display: 'none' }} id="doc-upload-input" />
                   <label htmlFor="doc-upload-input" className="btn-primary" style={{ cursor: 'pointer' }}><Upload size={14} /> Select Files</label>
                 </div>
@@ -383,14 +276,16 @@ return (
                   {docFiles.map((item, idx) => (
                     <div key={idx} className="file-card" style={{ width: '120px', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', position: 'relative' }}>
                       <div style={{ width: '100%', height: '80px', background: '#F8FAFC', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {item.preview.startsWith('data:') ? (
+                        {item.preview && (item.preview.startsWith('data:image') || item.preview.startsWith('blob:')) ? (
                           <img src={item.preview} alt="doc preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                          <FileText size={24} color="#CBD5E1" />
+                          <FileText size={24} color="#3B82F6" />
                         )}
                       </div>
-                      <div style={{ marginTop: '6px', fontSize: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>{item.file.name}</div>
-                      <button type="button" onClick={() => setDocFiles(prev => prev.filter((_, i) => i !== idx))} style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={12} /></button>
+                      <div style={{ marginTop: '6px', fontSize: '11px', textAlign: 'center', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.file?.name || "document.png"}
+                      </div>
+                      <button type="button" onClick={() => setDocFiles(prev => prev.filter((_, i) => i !== idx))} style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={12} /></button>
                     </div>
                   ))}
                 </div>
@@ -562,23 +457,27 @@ return (
                   </div>
                 </div>
               ) : (
-                <div style={{
-                  height: '260px',
-                  background: '#090D1A',
-                  borderRadius: '10px',
-                  border: '1.5px dashed rgba(255,255,255,0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'column',
-                  gap: '16px',
-                  position: 'relative'
-                }}>
+                <div 
+                  onClick={() => startCamera("selfie")}
+                  style={{
+                    height: '260px',
+                    background: '#090D1A',
+                    borderRadius: '10px',
+                    border: '1.5px dashed rgba(255,255,255,0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    position: 'relative',
+                    cursor: 'pointer'
+                  }}
+                >
                   {/* Simulated vector grid backdrop */}
                   <div style={{ position: 'absolute', inset: 0, opacity: 0.03, background: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px) 0 0/16px 16px, linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px) 0 0/16px 16px' }} />
 
-                  <Camera size={44} color="#334155" />
-                  <span style={{ color: 'var(--text-muted)', fontSize: '12.5px', fontWeight: '500' }}>Webcam Feed Offline. Click Capture to scan.</span>
+                  <Camera size={44} color="#60A5FA" />
+                  <span style={{ color: 'white', fontSize: '13px', fontWeight: '600' }}>Webcam Feed Offline. Click here to open camera.</span>
                 </div>
               )}
             </Panel>

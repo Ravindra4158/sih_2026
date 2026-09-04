@@ -15,7 +15,12 @@ class BiometricVerifyRequest(BaseModel):
     session_id: str = Field(..., description="Session identifier linking to previous steps")
     document_photo_base64: str = Field(..., description="Base64-encoded document photograph")
     live_capture_base64: str = Field(..., description="Base64-encoded live capture image")
-    ear_frame_series: List[float] = Field(..., description="Series of Eye Aspect Ratio values for blink detection")
+    ear_frame_series: List[float] = Field(default_factory=list, description="Series of Eye Aspect Ratio values for blink detection")
+
+class VerifyFaceByIdRequest(BaseModel):
+    id: str = Field(..., description="Case ID or Session ID to find the document image for")
+    live_capture_base64: str = Field(..., description="Base64-encoded live webcam capture")
+    ear_frame_series: Optional[List[float]] = Field(default_factory=list, description="Optional EAR series for liveness")
 
 class ScreeningOrchestrateRequest(BaseModel):
     session_id: str = Field(..., description="Session identifier for the ongoing screening process")
