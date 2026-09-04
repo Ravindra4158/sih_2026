@@ -1,29 +1,71 @@
-"""
-biometrics_service.py – Face matching and liveness checking.
-Supports checking face match using DeepFace with fallback support,
-and computes liveness blink detection using Eye Aspect Ratio (EAR) series.
-"""
-import logging
+"""Lightweight OpenCV face matching and liveness checking."""
+import asyncio
 import base64
-import tempfile
+import logging
 import os
+from pathlib import Path
+
+import cv2
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
-def _save_base64_to_temp_file(b64_str: str, prefix: str = "face_") -> str:
-    """Helper to save a base64 image string to a temporary file path."""
-    try:
-        # Strip data-uri headers if present
-        if "," in b64_str:
-            b64_str = b64_str.split(",", 1)[1]
-        img_data = base64.b64decode(b64_str)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", prefix=prefix) as tmp:
-            tmp.write(img_data)
-            return tmp.name
-    except Exception as e:
-        logger.error(f"Failed to save base64 image: {e}")
-        return ""
+_MODEL_DIR = Path(os.getenv("BIOMETRIC_MODEL_DIR", "models/face"))
+_YUNET_PATH = Path(os.getenv(
+    "YUNET_MODEL_PATH",
+    str(_MODEL_DIR / "face_detection_yunet_2023mar.onnx")
+))
+_SFACE_PATH = Path(os.getenv(
+    "SFACE_MODEL_PATH",
+    str(_MODEL_DIR / "face_recognition_sface_2021dec.onnx")
+))
+_face_detector = None
+_face_recognizer = None
+
+
+def _load_models():
+    global _face_detector, _face_recognizer
+    if _face_detector is None or _face_recognizer is None:
+        if not _YUNET_PATH.is_file() or not _SFACE_PATH.is_file():
+            raise FileNotFoundError(
+                f"Biometric models not found. Expected {_YUNET_PATH} and {_SFACE_PATH}."
+            )
+        _face_detector = cv2.FaceDetectorYN.create(
+            str(_YUNET_PATH), "", (320, 320), 0.8, 0.8, 5000
+        )
+        _face_recognizer = cv2.FaceRecognizerSF.create(str(_SFACE_PATH), "")
+    return _face_detector, _face_recognizer
+
+
+def _decode_image(value: str) -> np.ndarray:
+    encoded = value.split(",", 1)[1] if "," in value else value
+    image = cv2.imdecode(np.frombuffer(base64.b64decode(encoded), np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("Unable to decode biometric image")
+    return image
+
+
+def _face_feature(image: np.ndarray, detector, recognizer) -> np.ndarray:
+    detector.setInputSize((image.shape[1], image.shape[0]))
+    _, faces = detector.detect(image)
+    if faces is None or len(faces) == 0:
+        raise ValueError("No face detected")
+    face = max(faces, key=lambda item: item[2] * item[3])
+    aligned = recognizer.alignCrop(image, face)
+    feature = recognizer.feature(aligned)
+    return feature
+
+
+def _match_faces(document_photo_base64: str, live_capture_base64: str) -> float:
+    detector, recognizer = _load_models()
+    document_image = _decode_image(document_photo_base64)
+    live_image = _decode_image(live_capture_base64)
+    document_feature = _face_feature(document_image, detector, recognizer)
+    live_feature = _face_feature(live_image, detector, recognizer)
+    cosine_score = recognizer.match(
+        document_feature, live_feature, cv2.FaceRecognizerSF_FR_COSINE
+    )
+    return round(max(0.0, min(100.0, float(cosine_score) * 100.0)), 1)
 
 async def verify_match(
     session_id: str,
@@ -55,67 +97,23 @@ async def verify_match(
     pad_score = 0.95 if blink_detected else 0.35
     is_live = pad_score >= 0.5
 
-    # Match face using DeepFace
     face_match_score = 0.0
-    verification_status = "PENDING"
+    verification_status = "MISMATCH"
     flags = []
-
-    doc_tmp_path = _save_base64_to_temp_file(document_photo_base64, "doc_photo_")
-    live_tmp_path = _save_base64_to_temp_file(live_capture_base64, "live_cap_")
-
-    if not doc_tmp_path or not live_tmp_path:
-        flags.append("BIOMETRIC_IMAGE_LOAD_FAILED")
-        verification_status = "MISMATCH"
-    else:
-        try:
-            import asyncio
-            from deepface import DeepFace
-
-            # DeepFace.verify is CPU-bound; run in a thread pool to avoid blocking the event loop
-            def _run_deepface():
-                return DeepFace.verify(
-                    img1_path=doc_tmp_path,
-                    img2_path=live_tmp_path,
-                    model_name="VGG-Face",
-                    detector_backend="opencv",
-                    distance_metric="cosine",
-                    enforce_detection=False,
-                    align=True
-                )
-
-            result = await asyncio.to_thread(_run_deepface)
-            is_verified = bool(result.get("verified", False))
-            distance = float(result.get("distance", 1.0))
-            threshold = float(result.get("threshold", 0.40))
-            
-            # Convert cosine distance to 0-100% similarity score
-            # When distance == 0 -> 100%, when distance >= 1.0 -> 0%
-            normalized_score = max(0.0, min(100.0, (1.0 - (distance / max(threshold * 1.5, 0.68))) * 100))
-            face_match_score = round(normalized_score, 1)
-
-            if is_verified:
-                verification_status = "MATCH_CONFIRMED"
-            else:
-                verification_status = "MISMATCH"
-                flags.append(f"BIOMETRIC_MISMATCH (Distance: {distance:.2f}, Threshold: {threshold:.2f})")
-        except ImportError:
-            logger.warning("DeepFace not installed in environment. Falling back to heuristic match simulation.")
-            face_match_score = 92.5
+    try:
+        face_match_score = await asyncio.to_thread(
+            _match_faces, document_photo_base64, live_capture_base64
+        )
+        if face_match_score >= 36.0:
             verification_status = "MATCH_CONFIRMED"
-            flags.append("BIOMETRICS_HEURISTIC_MODE")
-        except Exception as e:
-            logger.error(f"DeepFace verification encountered error: {e}")
-            face_match_score = 45.0
-            verification_status = "MANUAL_REVIEW_REQUIRED"
-            flags.append(f"BIOMETRIC_VERIFICATION_ERROR: {str(e)}")
-
-    # Clean up temp files
-    for path in (doc_tmp_path, live_tmp_path):
-        if path and os.path.exists(path):
-            try:
-                os.unlink(path)
-            except Exception:
-                pass
+        else:
+            flags.append(f"BIOMETRIC_MISMATCH (Similarity: {face_match_score:.1f}%)")
+    except FileNotFoundError as error:
+        logger.warning(str(error))
+        flags.append("BIOMETRIC_MODEL_UNAVAILABLE")
+    except (ValueError, cv2.error) as error:
+        logger.info("Biometric verification rejected: %s", error)
+        flags.append("BIOMETRIC_FACE_MATCH_FAILED")
 
     if not is_live:
         flags.append("LIVENESS_WARNING_NO_BLINK")

@@ -34,7 +34,7 @@ async def verify_face_by_id(payload: VerifyFaceByIdRequest):
     Takes an ID (Case ID or Session ID) as input:
     1. Looks up the document photo from MongoDB (cases collection or session store).
     2. Takes the live photo captured with camera.
-    3. Runs DeepFace face verification to match them.
+    3. Runs the configured biometric verification mode.
     4. Automatically updates the case/session in MongoDB with the verification result.
     """
     lookup_id = payload.id.strip()
@@ -63,7 +63,7 @@ async def verify_face_by_id(payload: VerifyFaceByIdRequest):
             detail=f"No document image found for ID '{lookup_id}'. Make sure the document was uploaded for this case/session."
         )
 
-    # 3. Match against live camera photo with DeepFace
+    # 3. Match against live camera photo using the configured verification mode
     try:
         result = await verify_match(
             session_id=lookup_id,

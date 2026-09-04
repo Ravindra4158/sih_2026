@@ -14,7 +14,7 @@ This is a demo/prototype for synthetic or otherwise legally authorised material.
 - Template-style layout checks for Aadhaar, PAN, and passport documents.
 - ELA heatmaps, anomaly regions, and EXIF editing-software flags as tampering indicators.
 - A consolidated tampering analysis that flags ELA anomalies in detected portrait and OCR text regions, stamp-like coloured circular regions, and limited EXIF metadata clues.
-- Document-portrait detection with OpenCV, face comparison using DeepFace when available, and a simple EAR-series blink check.
+- Document-portrait detection with OpenCV YuNet/SFace matching and a simple EAR-series blink check.
 - Session-based aggregation into low, medium, or high risk. The orchestration endpoint always returns `final_action: "Pending"`; an officer must make any approval or rejection decision.
 - MongoDB-backed case CRUD, including four seeded demonstration cases when the `cases` collection is empty.
 
@@ -23,7 +23,7 @@ This is a demo/prototype for synthetic or otherwise legally authorised material.
 - OCR, type detection, layout checks, ELA, liveness, and facial similarity are heuristic/prototype components. They are not calibrated fraud probabilities and can produce false positives and false negatives.
 - ELA identifies unusual recompression differences; it does not establish that a document has been altered. It is especially limited for PNG images.
 - Blink liveness is derived only from the EAR values supplied by the client. It is not a complete presentation-attack-detection solution.
-- DeepFace may download or initialise model assets on first use. If DeepFace is unavailable, the current backend falls back to a heuristic result and marks it with `BIOMETRICS_HEURISTIC_MODE`.
+- Face matching uses lightweight YuNet and SFace ONNX models. If the model files are unavailable or no face is detected, verification returns a controlled rejection.
 - There is no authentication, authorization, rate limiting, malware scanning, encrypted-at-rest document storage, government/watchlist integration, or audit-grade retention policy.
 - OCR results and uploaded document images are written to the session store, and cases can contain base64 document/live images. Do not use real personal or biometric data without an appropriate legal, security, and retention design.
 
@@ -63,7 +63,7 @@ MongoDB (`border_screening` database): sessions and cases
 sudo apt-get install tesseract-ocr libzbar0 libgl1 libglib2.0-0
 ```
 
-The backend requirements include DeepFace, TensorFlow/Keras, EasyOCR, PyTorch-dependent components, and MongoDB drivers. Installation can therefore be sizeable.
+The backend requirements include EasyOCR, PyTorch-dependent components, MongoDB drivers, and OpenCV contrib. Installation can therefore be sizeable.
 
 ## Run locally
 

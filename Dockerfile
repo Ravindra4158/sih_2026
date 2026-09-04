@@ -24,13 +24,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install CPU-only PyTorch before EasyOCR so Docker does not download CUDA
-# wheels. TensorFlow/DeepFace remains available through requirements.txt.
+# wheels.
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY backend/ ./backend/
+COPY models/ ./models/
 
 # Uploads are staged in the system temp directory. Run the API without root.
 RUN useradd --create-home --uid 10001 appuser \

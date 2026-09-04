@@ -35,16 +35,21 @@ export default function Screening() {
   // Camera States
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraTarget, setCameraTarget] = useState(null); // 'document' or 'selfie'
+  const [cameraError, setCameraError] = useState("");
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
   // Access Webcam API
   const startCamera = async (target) => {
     setCameraTarget(target);
-    setCameraActive(true);
+    setCameraError("");
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera access requires HTTPS or localhost.");
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 } });
       streamRef.current = stream;
+      setCameraActive(true);
       // Wait a tick for <video> element to mount if it wasn't rendered yet
       setTimeout(() => {
         if (videoRef.current) {
@@ -52,7 +57,11 @@ export default function Screening() {
         }
       }, 100);
     } catch (err) {
-      console.warn("Webcam access denied or unavailable. Running in simulation mode.", err);
+      setCameraActive(false);
+      setCameraError(err.name === "NotAllowedError"
+        ? "Camera permission was denied. Allow camera access in your browser settings and try again."
+        : err.message || "Camera access is unavailable.");
+      console.warn("Webcam access denied or unavailable.", err);
     }
   };
 
@@ -86,15 +95,6 @@ export default function Screening() {
           }
         }
       }, "image/jpeg", 0.95);
-    } else {
-      if (cameraTarget === "document") {
-        // Simulated document capture – add placeholder entry
-        const placeholder = { file: true, preview: "SIMULATED_DOC_IMAGE", type: "Document" };
-        setDocFiles(prev => [...prev, placeholder]);
-      } else {
-        setSelfiePreview("SIMULATED_SELFIE_IMAGE");
-        setSelfieFile(true);
-      }
     }
     stopCamera();
   };
@@ -286,6 +286,11 @@ return (
 
             {/* High-fidelity camera viewfinder panel */}
             <Panel title={cameraActive ? `CAPTURING: ${cameraTarget.toUpperCase()}` : "HUD VIEW FINDER"}>
+              {cameraError && (
+                <p style={{ color: "var(--danger)", fontSize: "12px", margin: "0 0 12px" }} role="alert">
+                  {cameraError}
+                </p>
+              )}
               {cameraActive ? (
                 <div style={{
                   position: 'relative',
