@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzbar0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install PyTorch CPU-only first (saves ~4-5 GB of useless Nvidia CUDA wheels)
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
