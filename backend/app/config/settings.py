@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     max_upload_size_bytes: int = 10 * 1024 * 1024
     upload_temp_dir: str = "/tmp/ai-border-screening-uploads"
     cors_origins: list[str] = [
-        "https://verifydoc.live",
-        "https://www.verifydoc.live",
+        "https://verify-doc.in",
+        "https://www.verify-doc.in",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
