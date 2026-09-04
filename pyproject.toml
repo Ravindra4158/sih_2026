@@ -16,10 +16,16 @@ dependencies = [
   "uvicorn[standard]>=0.30,<1.0",
   "pydantic-settings>=2.3,<3.0",
   "SQLAlchemy>=2.0,<3.0",
+  "opencv-python-headless>=4.10,<5.0",
+  "numpy>=1.26,<3.0",
+  "mrz>=0.6,<1.0",
+  "easyocr>=1.7,<2.0",
+  "pyzbar>=0.1.9",
+  "pyaadhaar>=2.0.0",
 ]
 
 [project.optional-dependencies]
-ml = ["opencv-python-headless>=4.10,<5.0", "numpy>=1.26,<3.0", "mrz>=0.6,<1.0", "deepface>=0.0.90,<1.0", "mediapipe>=0.10,<1.0"]
+ml = ["deepface>=0.0.90,<1.0", "mediapipe>=0.10,<1.0"]
 dev = ["pytest>=8.0,<9.0", "httpx>=0.27,<1.0", "ruff>=0.6,<1.0"]
 
 [tool.setuptools.packages.find]
