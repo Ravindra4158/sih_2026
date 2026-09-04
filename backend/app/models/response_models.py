@@ -41,6 +41,21 @@ class ELAResponse(BaseModel):
     image_width: Optional[int] = Field(None, description="Width of scanned image")
     image_height: Optional[int] = Field(None, description="Height of scanned image")
 
+
+class TamperingAnalysisResponse(BaseModel):
+    """Explainable tampering-screening signals; never an authenticity verdict."""
+    session_id: str = Field(...)
+    tamper_detected: bool = Field(..., description="ELA threshold signal requiring review")
+    tamper_confidence_score: float = Field(..., ge=0, le=100)
+    anomaly_regions: List[Any] = Field(default_factory=list)
+    ela_heatmap_base64: Optional[str] = Field(None)
+    photo_replacement: Dict[str, Any]
+    text_manipulation: Dict[str, Any]
+    stamp_forgery: Dict[str, Any]
+    image_metadata: Dict[str, Any]
+    flags_raised: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+
 class LivenessCheck(BaseModel):
     is_live: bool = Field(...)
     blink_detected: bool = Field(...)

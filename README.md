@@ -13,6 +13,7 @@ This is a demo/prototype for synthetic or otherwise legally authorised material.
 - QR-code and barcode extraction, Aadhaar QR decoding where supported, and OCR-to-QR cross-reference signals.
 - Template-style layout checks for Aadhaar, PAN, and passport documents.
 - ELA heatmaps, anomaly regions, and EXIF editing-software flags as tampering indicators.
+- A consolidated tampering analysis that flags ELA anomalies in detected portrait and OCR text regions, stamp-like coloured circular regions, and limited EXIF metadata clues.
 - Document-portrait detection with OpenCV, face comparison using DeepFace when available, and a simple EAR-series blink check.
 - Session-based aggregation into low, medium, or high risk. The orchestration endpoint always returns `final_action: "Pending"`; an officer must make any approval or rejection decision.
 - MongoDB-backed case CRUD, including four seeded demonstration cases when the `cases` collection is empty.
@@ -125,6 +126,7 @@ All routes below are prefixed with `/api/v1` and are defined in `backend/app/api
 | `POST` | `/document/validate-checksum` | Validate supplied MRZ text for a supplied `session_id`. |
 | `POST` | `/document/detect-face` | Upload `image_file`; return an OpenCV portrait crop or a document-layout fallback crop. |
 | `POST` | `/forensics/ela-analysis` | Upload `image_file`; return ELA signal, heatmap, and anomaly regions. |
+| `POST` | `/forensics/tampering-analysis` | Upload `image_file`; combine ELA, portrait overlap, text-area, stamp-candidate, and metadata signals for officer review. |
 | `POST` | `/biometrics/verify-match` | Compare supplied document and live-capture base64 images for a session. |
 | `POST` | `/biometrics/verify-by-id` | Load a document image from a case/session and compare it with a supplied live capture. |
 | `POST` | `/screening/orchestrate` | Consolidate stored session signals into a risk summary; never makes a final officer decision. |

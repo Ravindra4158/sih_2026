@@ -4,12 +4,50 @@ from typing import Optional
 import shutil
 import tempfile
 import os
-from ...models.response_models import ELAResponse
+from ...models.response_models import ELAResponse, TamperingAnalysisResponse
 from ...services.ela_service import analyze_ela_image
+from ...services.tampering_service import analyze_tampering
 from ...utils.common import SessionStore
 from ...utils.file_utils import validate_upload, resolve_image_path
 
 router = APIRouter()
+
+
+@router.post('/forensics/tampering-analysis', response_model=TamperingAnalysisResponse)
+async def tampering_analysis(
+    image_file: UploadFile = File(...),
+    session_id: Optional[str] = Query(None, description="Optional session ID to link steps"),
+    jpeg_quality: int = Query(90, ge=10, le=100),
+):
+    """Return explainable image-tampering signals for officer review.
+
+    The result covers ELA anomalies, portrait-region overlap, text-area
+    anomalies, coloured stamp-like candidates, and a limited EXIF review. It
+    must not be used as an automated authenticity decision.
+    """
+    validate_upload(image_file)
+    try:
+        suffix = os.path.splitext(image_file.filename)[-1].lower() if image_file.filename else ""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            shutil.copyfileobj(image_file.file, tmp)
+            tmp_path = tmp.name
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to store upload: {e}")
+
+    image_path = resolve_image_path(tmp_path, image_file.filename or "")
+    active_session_id = session_id or f"sess_{uuid4().hex}"
+    try:
+        result = await analyze_tampering(image_path, jpeg_quality)
+        await SessionStore.set(active_session_id, "tampering_analysis", result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Tampering analysis failed: {str(e)}")
+    finally:
+        if image_path != tmp_path and os.path.exists(image_path):
+            os.unlink(image_path)
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+    return TamperingAnalysisResponse(session_id=active_session_id, **result)
 
 @router.post('/forensics/ela-analysis', response_model=ELAResponse)
 async def ela_analysis(

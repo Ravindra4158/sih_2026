@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, AlertTriangle, CheckCircle, Search, Filter, Download, Eye, Loader2 } from "lucide-react";
 import { Panel } from "./DashboardLayout";
 import { getCases } from "../services/api";
+import { buildCasesCsv, downloadCsv } from "../utils/reports";
 
 export default function Cases() {
   const [cases, setCases] = useState([]);
@@ -23,17 +24,7 @@ export default function Cases() {
   }, [riskFilter, statusFilter, searchQuery]);
 
   const handleDownloadReport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + ["Case ID,Date,Name,Document Type,Number,Risk,Status,Officer"].join(",") + "\n"
-      + cases.map(c => [c.id, c.date, c.name, c.docType, c.docNo, c.riskLevel, c.status, c.officer].join(",")).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "border_screening_history.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv("border_screening_history.csv", buildCasesCsv(cases));
   };
 
   // Server-side filtering is done via API; cases is already filtered
@@ -102,7 +93,7 @@ export default function Cases() {
                 <th style={{ padding: '12px 16px', fontWeight: '600' }}>Document Type</th>
                 <th style={{ padding: '12px 16px', fontWeight: '600' }}>Number</th>
                 <th style={{ padding: '12px 16px', fontWeight: '600' }}>Risk Level</th>
-                <th style={{ padding: '12px 16px', fontWeight: '600' }}>Status</th>
+             ·   <th style={{ padding: '12px 16px', fontWeight: '600' }}>Status</th>
                 <th style={{ padding: '12px 16px', fontWeight: '600' }}>Officer</th>
                 <th style={{ padding: '12px 16px', fontWeight: '600' }}>Action</th>
               </tr>
